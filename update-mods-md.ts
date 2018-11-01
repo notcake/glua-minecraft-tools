@@ -13,8 +13,8 @@ export function updateModIDs(concurrency: ConcurrentManager,table: string[][]): 
 			switch (namespace)
 			{
 				case "curseforge":
-					console.error("Processing " + namespace + ":" + id + "...");
 					const newUrls = await getCurseforgeUrls(id, versions);
+					console.error("Processing " + namespace + ":" + id + "...");
 					for (let j = 0; j < versions.length; j++)
 					{
 						const version = versions[j];
@@ -56,9 +56,9 @@ async function main(argc: number, argv: string[])
 
 	const data = fs.readFileSync(process.argv[2], "utf-8");
 	const lines = data.split("\n");
-	const newLines: string[] = [];
+	const newLines: (string | [number,string[][],number[]])[] = [];
 
-	const concurrency = new ConcurrentManager(10);
+	const concurrency = new ConcurrentManager(15);
 
 	let i = 0;
 	while (i < lines.length)
@@ -82,12 +82,24 @@ async function main(argc: number, argv: string[])
 			continue;
 		}
 
-		const newTable = await updateModIDs(concurrency,table);
-		newLines.push(formatModTable(newTable, columnWidths));
+		updateModIDs(concurrency,table);
+		newLines.push([nextI, table, columnWidths]);
 		i = nextI;
 	}
 
 	await concurrency.defer();
+
+	for(let i=0; i < newLines.length;i++) {
+		let line = newLines[i];
+
+		if(typeof line === "string") {
+			// no changes needed
+		}
+		else {
+			// render this line
+			newLines[i] = formatModTable(line[1],line[2]);
+		}
+	}
 
 	console.log(newLines.join("\n"));
 }
