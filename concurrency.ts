@@ -1,5 +1,3 @@
-import { reject } from "bluebird";
-
 export type Thread<T> = () => Promise<T>;
 
 export interface IQueuedThread<T> {
