@@ -185,19 +185,25 @@ async function main(argc: number, argv: string[])
 							case "curseforge":
 								console.error("Processing " + namespace + ":" + id + "...");
 
-								let fileData = await downloadModFromCurseforge(url, (progressData) => {
-									console.error("Downloading " + namespace + ":" + id + " @ " + `${Math.round(progressData.percent * 1000) / 10}%...`);
-								});
+								try
+								{
+									let fileData = await downloadModFromCurseforge(url, (progressData) => {
+										console.error("Downloading " + namespace + ":" + id + " @ " + `${Math.round(progressData.percent * 1000) / 10}%...`);
+									});
 
-								console.error("Saving " + namespace + ":" + id + "...");
-								fs.writeFileSync(`${targetDirName}/${currentSection}/${fileData.filename}`, fileData.contents);
+									console.error("Saving " + namespace + ":" + id + "...");
+									fs.writeFileSync(`${targetDirName}/${currentSection}/${fileData.filename}`, fileData.contents);
 
-								manifest[currentSection][`${namespace}:${id}`] = {
-									filename: fileData.filename,
-									url,
-									hash: SHA1(fileData.contents),
-								};
-								fs.writeFileSync(`${targetDirName}/manifest.json`, JSON.stringify(manifest, null, 4));
+									manifest[currentSection][`${namespace}:${id}`] = {
+										filename: fileData.filename,
+										url,
+										hash: SHA1(fileData.contents),
+									};
+									fs.writeFileSync(`${targetDirName}/manifest.json`, JSON.stringify(manifest, null, 4));
+								}
+								catch(e) {
+									console.error(`Could not update ${namespace}:${id} -> ${e}...`);
+								}
 
 								break;
 							default:
