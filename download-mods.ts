@@ -23,6 +23,7 @@ export interface IManifest {
 
 import { formatModTable, parseTable, forEachMod, getListedVersions } from "./md-tools";
 import { downloadModFromCurseforge } from "./curseforge-tools";
+import { ConcurrentManager } from "./concurrency";
 
 async function main(argc: number, argv: string[])
 {
@@ -41,12 +42,13 @@ async function main(argc: number, argv: string[])
 	}
 
 	const sections: [string,number][] = [];
-	const activeDownloads: Promise<IDownloadedMod>[] = [];
 
 	let manifest: IManifest = {};
 	if(fs.existsSync(`${targetDirName}/manifest.json`)) {
 		manifest = JSON.parse(fs.readFileSync(`${targetDirName}/manifest.json`).toString());
 	}
+	
+	const concurrency = new ConcurrentManager(5);
 
 	let i = 0;
 	while (i < lines.length)
@@ -140,17 +142,16 @@ async function main(argc: number, argv: string[])
 						}
 					}
 
-					switch (namespace)
-					{
-						case "curseforge":
-							console.error("Processing " + namespace + ":" + id + "...");
+					concurrency.queueThread(async () => {
+						switch (namespace)
+						{
+							case "curseforge":
+								console.error("Processing " + namespace + ":" + id + "...");
 
-							let dl = downloadModFromCurseforge(url,(progressData) => {
-								console.error("Downloading " + namespace + ":" + id + " @ " + `${Math.round(progressData.percent * 1000) / 10}%...`);
-							});
+								let fileData = await downloadModFromCurseforge(url,(progressData) => {
+									console.error("Downloading " + namespace + ":" + id + " @ " + `${Math.round(progressData.percent * 1000) / 10}%...`);
+								});
 
-							activeDownloads.push(dl);
-							dl.then((fileData) => {
 								console.error("Saving " + namespace + ":" + id + "...");
 								fs.writeFileSync(`${targetDirName}/${currentSection}/${fileData.filename}`,fileData.contents);
 
@@ -160,13 +161,13 @@ async function main(argc: number, argv: string[])
 									hash: SHA1(fileData.contents),
 								};
 								fs.writeFileSync(`${targetDirName}/manifest.json`,JSON.stringify(manifest,null,4));
-							})
 
-							break;
-						default:
-							console.error(row[0] + ": Unknown id " + namespace + ":" + id + ".");
-							break;
-					}
+								break;
+							default:
+								console.error(row[0] + ": Unknown id " + namespace + ":" + id + ".");
+								break;
+						}
+					});
 				}
 			});
 		}
@@ -174,7 +175,7 @@ async function main(argc: number, argv: string[])
 		i = nextI;
 	}
 
-	await Promise.all(activeDownloads);
+	await concurrency.defer();
 }
 
 main(process.argv.length, process.argv);
