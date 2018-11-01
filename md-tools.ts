@@ -51,8 +51,8 @@ export function getListedVersions(table: string[][])
 	for (let i = 2; i < table[0].length; i++)
 	{
 		versions.push(table[0][i]);
-    }
-    return versions;
+	}
+	return versions;
 }
 
 export async function forEachMod(table: string[][],cb: (row: string[],modNamespace: string,modID: string,urls: (string|null)[]) => Promise<void>): Promise<string[][]>
@@ -78,8 +78,8 @@ export async function forEachMod(table: string[][],cb: (row: string[],modNamespa
 		const result = findModId(row);
 		if (result)
 		{
-            const [namespace, id] = result;
-            await cb(row,namespace,id,urls);
+			const [namespace, id] = result;
+			await cb(row,namespace,id,urls);
 		}
 		else
 		{

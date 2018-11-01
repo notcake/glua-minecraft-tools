@@ -17,9 +17,9 @@ import * as path from "path";
 const progress = require("request-progress");
 
 const versionMap = {
-	"1.7":    "1738749986%3A5",
+	"1.7":	"1738749986%3A5",
 	// "1.7.10": "2020709689%3A4449",
-	"1.7.10":    "1738749986%3A5",
+	"1.7.10":	"1738749986%3A5",
 	"1.10":   "1738749986%3A572",
 	// "1.10.2": "2020709689%3A6170",
 	"1.10.2":   "1738749986%3A572",
@@ -70,15 +70,15 @@ export function getFileURLFromCurseforge(curseforgeURL: string)
 }
 
 interface IRequestProgress {
-	percent: number,           	// Overall percent (between 0 to 1)
-	speed: number,              // The download speed in bytes/sec
+	percent: number,		   	// Overall percent (between 0 to 1)
+	speed: number,			  // The download speed in bytes/sec
 	size: {
-		total: number,        	// The total payload size in bytes
+		total: number,			// The total payload size in bytes
 		transferred: number   	// The transferred payload size in bytes
 	},
 	time: {
-		elapsed: number,        // The total elapsed seconds since the start (3 decimals)
-		remaining: number       // The remaining seconds to finish (3 decimals)
+		elapsed: number,		// The total elapsed seconds since the start (3 decimals)
+		remaining: number	   // The remaining seconds to finish (3 decimals)
 	}
 }
 

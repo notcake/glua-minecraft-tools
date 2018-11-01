@@ -6,9 +6,9 @@ import { ConcurrentManager } from "./concurrency";
 
 export function updateModIDs(concurrency: ConcurrentManager,table: string[][]): Promise<string[][]>
 {
-    const versions = getListedVersions(table);
+	const versions = getListedVersions(table);
 
-    return forEachMod(table,async (row,namespace,id,urls) => {
+	return forEachMod(table,async (row,namespace,id,urls) => {
 		concurrency.queueThread(async () => {
 			switch (namespace)
 			{
@@ -19,19 +19,19 @@ export function updateModIDs(concurrency: ConcurrentManager,table: string[][]): 
 					{
 						const version = versions[j];
 						const previousUrl = urls[j];
-						const nextUrl     = newUrls[version];
+						const nextUrl	 = newUrls[version];
 						if (previousUrl != nextUrl)
 						{
 							const previous = previousUrl ? previousUrl.match(/\/([0-9]+)$/)![1] : null;
-							const next     = nextUrl ? nextUrl.match(/\/([0-9]+)$/)![1] : null;
+							const next	 = nextUrl ? nextUrl.match(/\/([0-9]+)$/)![1] : null;
 							if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
 							{
-								console.error("    " + version + ": " + previous + " -> " + next);
+								console.error("	" + version + ": " + previous + " -> " + next);
 								row[2 + j] = "[" + version + "](" + nextUrl + ")";
 							}
 							else
 							{
-								console.error("    !!! " + version + ": " + previous + " -> " + next);
+								console.error("	!!! " + version + ": " + previous + " -> " + next);
 							}
 						}
 					}
