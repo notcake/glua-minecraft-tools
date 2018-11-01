@@ -1,7 +1,8 @@
 import * as fs from "fs";
 import * as crypto from "crypto";
 
-function SHA1(data: Buffer) {
+function SHA1(data: Buffer)
+{
 	return crypto.createHash("sha1").update(data).digest("hex");
 }
 
@@ -37,14 +38,16 @@ async function main(argc: number, argv: string[])
 	const lines = data.split("\n");
 	const targetDirName = process.argv[3];
 
-	if(!fs.existsSync(targetDirName)) {
+	if(!fs.existsSync(targetDirName))
+	{
 		fs.mkdirSync(targetDirName);
 	}
 
 	const sections: [string,number][] = [];
 
 	let manifest: IManifest = {};
-	if(fs.existsSync(`${targetDirName}/manifest.json`)) {
+	if(fs.existsSync(`${targetDirName}/manifest.json`))
+	{
 		manifest = JSON.parse(fs.readFileSync(`${targetDirName}/manifest.json`).toString());
 	}
 	
@@ -55,26 +58,34 @@ async function main(argc: number, argv: string[])
 	{
 		const line = lines[i];
 
-		if (line.indexOf("|") == -1) {
-			if(line.trim().charAt(0) === "#") {
+		if (line.indexOf("|") == -1)
+		{
+			if(line.trim().charAt(0) === "#")
+			{
 				const match = line.trim().match(/^(\#+)\s*([\s\S]*?)\s*$/)
 				let priority = 1;
-				if(match) {
+				if(match)
+				{
 					priority = match[1].length;
 
-					while(true) {
+					while(true)
+					{
 						let lastSectionPriority = 0;
-						if(sections[sections.length - 1]) {
+						if(sections[sections.length - 1])
+						{
 							lastSectionPriority = sections[sections.length - 1][1];
 						}
-						else {
+						else
+						{
 							break;
 						}
 
-						if(priority <= lastSectionPriority) {
+						if(priority <= lastSectionPriority)
+						{
 							sections.pop()
 						}
-						else {
+						else
+						{
 							break;
 						}
 					}
@@ -95,7 +106,8 @@ async function main(argc: number, argv: string[])
 		}
 
 		const currentSection = sections.length > 0 ? sections[sections.length - 1][0] : "Misc";
-		if(!fs.existsSync(`${targetDirName}/${currentSection}`)) {
+		if(!fs.existsSync(`${targetDirName}/${currentSection}`))
+		{
 			fs.mkdirSync(`${targetDirName}/${currentSection}`);
 		}
 
@@ -106,30 +118,39 @@ async function main(argc: number, argv: string[])
 		if(versionIdx === -1) {
 			console.error(`Version ${process.argv[4].trim()} not found in [${versions.join(", ")}]`);
 		}
-		else {
+		else
+		{
 			await forEachMod(table,async (row,namespace,id,urls) => {
-				if(row[1].indexOf("✔") === -1) {
+				if(row[1].indexOf("✔") === -1)
+				{
 					// bad mod!!!!
 					// we dont want it!!!!
 					return;
 				}
 
 				const url = urls[versionIdx];
-				if(url === null) {
+				if(url === null)
+				{
 					console.error("Cannot process " + namespace + ":" + id + " because it has no compatible versions...");
 				}
-				else {
+				else
+				{
 					// Check if we REALLY need to download this
-					if(manifest[currentSection][`${namespace}:${id}`]) {
+					if(manifest[currentSection][`${namespace}:${id}`])
+					{
 						const oldFileName = `${targetDirName}/${currentSection}/${manifest[currentSection][`${namespace}:${id}`].filename}`;
-						if(fs.existsSync(oldFileName)) {
-							if(manifest[currentSection][`${namespace}:${id}`].url === url) {
+						if(fs.existsSync(oldFileName))
+						{
+							if(manifest[currentSection][`${namespace}:${id}`].url === url)
+							{
 								let oldData = fs.readFileSync(oldFileName);
 								let oldHash = SHA1(oldData);
-								if(oldHash !== manifest[currentSection][`${namespace}:${id}`].hash) {
+								if(oldHash !== manifest[currentSection][`${namespace}:${id}`].hash)
+								{
 									console.error("Hash mismatch found in " + namespace + ":" + id + "...");
 								}
-								else {
+								else
+								{
 									console.error("Ignoring " + namespace + ":" + id + " because it already exists...");
 									return;
 								}

@@ -85,32 +85,37 @@ interface IRequestProgress {
 export function downloadModFromCurseforge(curseforgeURL: string,progressCb: (data: IRequestProgress) => void): Promise<IDownloadedMod>
 {
 	return new Promise<IDownloadedMod>((resolve,reject) => {
-		let reqState = request(getFileURLFromCurseforge(curseforgeURL),{
-			encoding: null, // for a Buffer
-		},(err,result,body) => {
-			if(err) {
-				reject(err);
-			}
-			else {
-				// fallback to everything after the last slash
-				let filename = result.request.uri.href.split("/").pop() as string;
-
-				// let's try some parsing magic
-				let urlData = url.parse(result.request.uri.href);				
-				if(urlData && urlData.pathname) {
-					let pathData = path.parse(urlData.pathname);
-					if(pathData && pathData.base) {
-						filename = pathData.base;
-					}
+		let reqState = request(
+			getFileURLFromCurseforge(curseforgeURL),
+			{
+				encoding: null, // for a Buffer
+			},
+			(err,result,body) => {
+				if(err)
+				{
+					reject(err);
 				}
+				else
+				{
+					// fallback to everything after the last slash
+					let filename = result.request.uri.href.split("/").pop() as string;
 
-				resolve({
-					contents: body,
-					filename,
-					url: curseforgeURL,
-				});
+					// let's try some parsing magic
+					let urlData = url.parse(result.request.uri.href);				
+					if(urlData && urlData.pathname)
+					{
+						let pathData = path.parse(urlData.pathname);
+						if(pathData && pathData.base) { filename = pathData.base; }
+					}
+
+					resolve({
+						contents: body,
+						filename,
+						url: curseforgeURL,
+					});
+				}
 			}
-		})
+		);
 
 		progress(reqState).on("progress",progressCb).on("error",reject);
 	})
