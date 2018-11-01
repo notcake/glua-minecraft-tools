@@ -47,7 +47,7 @@ export function findModId(row: string[]): [string, string]|null
 	return null;
 }
 
-function getListedVersions(table: string[][])
+export function getListedVersions(table: string[][])
 {
 	const versions: string[] = [];
 	for (let i = 2; i < table[0].length; i++)

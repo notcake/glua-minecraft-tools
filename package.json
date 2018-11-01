@@ -3,9 +3,12 @@
   "dependencies": {
     "@types/node": "^10.12.1",
     "request": "^2.88.0",
+    "request-progress": "^3.0.0",
     "request-promise": "^4.2.2"
   },
   "devDependencies": {
+    "@types/request": "^2.48.0",
+    "@types/request-promise": "^4.1.42",
     "typescript": "^3.1.5"
   }
 }
