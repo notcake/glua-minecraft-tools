@@ -97,6 +97,11 @@ export function downloadModFromCurseforge(curseforgeURL: string, progressCb: (da
 				}
 				else
 				{
+					if (result.statusCode !== 200)
+					{
+						return reject(`Non-200 status code returned by curseforge`);
+					}
+
 					// fallback to everything after the last slash
 					let filename = result.request.uri.href.split("/").pop() as string;
 
@@ -117,6 +122,8 @@ export function downloadModFromCurseforge(curseforgeURL: string, progressCb: (da
 			}
 		);
 
-		progress(reqState).on("progress", progressCb).on("error", reject);
+		progress(reqState).on("progress", progressCb)
+
+		reqState.catch(reject);
 	})
 }
