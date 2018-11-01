@@ -1,8 +1,6 @@
 // markdown tools
 // a common file containing the API to interact with the glua minecraft markdown doc
 
-import { getCurseforgeUrls } from "./curseforge-tools";
-
 function parseRow(line: string): string[]
 {
 	if (!line.trim().endsWith("|"))
@@ -89,44 +87,6 @@ export async function forEachMod(table: string[][],cb: (row: string[],modNamespa
 		}
 	}
 	return table;
-}
-
-export function updateModIDs(table: string[][]): Promise<string[][]>
-{
-    const versions = getListedVersions(table);
-
-    return forEachMod(table,async (row,namespace,id,urls) => {
-        switch (namespace)
-        {
-            case "curseforge":
-                console.error("Processing " + namespace + ":" + id + "...");
-                const newUrls = await getCurseforgeUrls(id, versions);
-                for (let j = 0; j < versions.length; j++)
-                {
-                    const version = versions[j];
-                    const previousUrl = urls[j];
-                    const nextUrl     = newUrls[version];
-                    if (previousUrl != nextUrl)
-                    {
-                        const previous = previousUrl ? previousUrl.match(/\/([0-9]+)$/)![1] : null;
-                        const next     = nextUrl ? nextUrl.match(/\/([0-9]+)$/)![1] : null;
-                        if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
-                        {
-                            console.error("    " + version + ": " + previous + " -> " + next);
-                            row[2 + j] = "[" + version + "](" + nextUrl + ")";
-                        }
-                        else
-                        {
-                            console.error("    !!! " + version + ": " + previous + " -> " + next);
-                        }
-                    }
-                }
-                break;
-            default:
-                console.error(row[0] + ": Unknown id " + namespace + ":" + id + ".");
-                break;
-        }
-    });
 }
 
 function padRight(s: string, n: number): string

@@ -1,6 +1,45 @@
 import * as fs from "fs";
 
-import { updateModIDs, formatModTable, parseTable } from "./md-tools";
+import { formatModTable, parseTable, getListedVersions, forEachMod } from "./md-tools";
+import { getCurseforgeUrls } from "./curseforge-tools";
+
+export function updateModIDs(table: string[][]): Promise<string[][]>
+{
+    const versions = getListedVersions(table);
+
+    return forEachMod(table,async (row,namespace,id,urls) => {
+        switch (namespace)
+        {
+            case "curseforge":
+                console.error("Processing " + namespace + ":" + id + "...");
+                const newUrls = await getCurseforgeUrls(id, versions);
+                for (let j = 0; j < versions.length; j++)
+                {
+                    const version = versions[j];
+                    const previousUrl = urls[j];
+                    const nextUrl     = newUrls[version];
+                    if (previousUrl != nextUrl)
+                    {
+                        const previous = previousUrl ? previousUrl.match(/\/([0-9]+)$/)![1] : null;
+                        const next     = nextUrl ? nextUrl.match(/\/([0-9]+)$/)![1] : null;
+                        if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
+                        {
+                            console.error("    " + version + ": " + previous + " -> " + next);
+                            row[2 + j] = "[" + version + "](" + nextUrl + ")";
+                        }
+                        else
+                        {
+                            console.error("    !!! " + version + ": " + previous + " -> " + next);
+                        }
+                    }
+                }
+                break;
+            default:
+                console.error(row[0] + ": Unknown id " + namespace + ":" + id + ".");
+                break;
+        }
+    });
+}
 
 async function main(argc: number, argv: string[])
 {
