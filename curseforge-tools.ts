@@ -82,9 +82,9 @@ interface IRequestProgress {
 	}
 }
 
-export function downloadModFromCurseforge(curseforgeURL: string,progressCb: (data: IRequestProgress) => void): Promise<IDownloadedMod>
+export function downloadModFromCurseforge(curseforgeURL: string, progressCb: (data: IRequestProgress) => void): Promise<IDownloadedMod>
 {
-	return new Promise<IDownloadedMod>((resolve,reject) => {
+	return new Promise<IDownloadedMod>((resolve, reject) => {
 		let reqState = request(
 			getFileURLFromCurseforge(curseforgeURL),
 			{
@@ -117,6 +117,6 @@ export function downloadModFromCurseforge(curseforgeURL: string,progressCb: (dat
 			}
 		);
 
-		progress(reqState).on("progress",progressCb).on("error",reject);
+		progress(reqState).on("progress", progressCb).on("error", reject);
 	})
 }
