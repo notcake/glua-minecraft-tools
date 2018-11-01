@@ -3,6 +3,14 @@
 import * as request from "request-promise";
 import { IDownloadedMod } from "./download-mods";
 
+const fakeUa = require("fake-useragent");
+
+request.defaults({
+	headers: {
+		["User-Agent"]: fakeUa(),
+	}
+})
+
 import * as url from "url";
 import * as path from "path";
 
