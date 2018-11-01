@@ -21,7 +21,7 @@ export interface IManifest {
 	};
 };
 
-import { updateModIDs, formatModTable, parseTable, forEachMod, getListedVersions } from "./md-tools";
+import { formatModTable, parseTable, forEachMod, getListedVersions } from "./md-tools";
 import { downloadModFromCurseforge } from "./curseforge-tools";
 
 async function main(argc: number, argv: string[])
