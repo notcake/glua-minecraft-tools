@@ -125,6 +125,22 @@ async function main(argc: number, argv: string[])
 				{
 					// bad mod!!!!
 					// we dont want it!!!!
+					
+					if (manifest[currentSection][`${namespace}:${id}`])
+					{
+						// but do we have it locally?
+						const oldFileName = `${targetDirName}/${currentSection}/${manifest[currentSection][`${namespace}:${id}`].filename}`;
+						if (fs.existsSync(oldFileName))
+						{
+							// DELETE IT!
+
+							fs.unlinkSync(oldFileName);
+							delete manifest[currentSection][`${namespace}:${id}`];
+							fs.writeFileSync(`${targetDirName}/manifest.json`, JSON.stringify(manifest, null, 4));
+							console.error("Removed " + namespace + ":" + id + "...");
+						}
+					}
+
 					return;
 				}
 
