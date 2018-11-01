@@ -1,6 +1,12 @@
 // curseforge tools
 // a common file containing the API to interact with the curseforge site
 import * as request from "request-promise";
+import { IDownloadedMod } from "./download-mods";
+
+import * as url from "url";
+import * as path from "path";
+
+const progress = require("request-progress");
 
 const versionMap = {
 	"1.7":    "1738749986%3A5",
@@ -44,4 +50,60 @@ export async function getCurseforgeUrls(id: string, versions: string[]): Promise
 		urls[version] = url;
 	}
 	return urls;
+}
+
+export function getFileURLFromCurseforge(curseforgeURL: string)
+{
+	// try and get rid of any trailing forwardslashes
+	const match = curseforgeURL.match(/(^[\s\S]+?[^\/]+)\/*$/)
+	if (match != null) { curseforgeURL = match[1]; }
+	
+	return `${curseforgeURL}/download`;
+}
+
+interface IRequestProgress {
+	percent: number,           	// Overall percent (between 0 to 1)
+	speed: number,              // The download speed in bytes/sec
+	size: {
+		total: number,        	// The total payload size in bytes
+		transferred: number   	// The transferred payload size in bytes
+	},
+	time: {
+		elapsed: number,        // The total elapsed seconds since the start (3 decimals)
+		remaining: number       // The remaining seconds to finish (3 decimals)
+	}
+}
+
+export function downloadModFromCurseforge(curseforgeURL: string,progressCb: (data: IRequestProgress) => void): Promise<IDownloadedMod>
+{
+	return new Promise<IDownloadedMod>((resolve,reject) => {
+		let reqState = request(getFileURLFromCurseforge(curseforgeURL),{
+			encoding: null, // for a Buffer
+		},(err,result,body) => {
+			if(err) {
+				reject(err);
+			}
+			else {
+				// fallback to everything after the last slash
+				let filename = result.request.uri.href.split("/").pop() as string;
+
+				// let's try some parsing magic
+				let urlData = url.parse(result.request.uri.href);				
+				if(urlData && urlData.pathname) {
+					let pathData = path.parse(urlData.pathname);
+					if(pathData && pathData.base) {
+						filename = pathData.base;
+					}
+				}
+
+				resolve({
+					contents: body,
+					filename,
+					url: curseforgeURL,
+				});
+			}
+		})
+
+		progress(reqState).on("progress",progressCb).on("error",reject);
+	})
 }
