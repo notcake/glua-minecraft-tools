@@ -4,11 +4,11 @@ import { formatModTable, parseTable, getListedVersions, forEachMod } from "./md-
 import { getCurseforgeUrls } from "./curseforge-tools";
 import { ConcurrentManager } from "./concurrency";
 
-export function updateModIDs(concurrency: ConcurrentManager,table: string[][]): Promise<string[][]>
+export function updateModIDs(concurrency: ConcurrentManager, table: string[][]): Promise<string[][]>
 {
 	const versions = getListedVersions(table);
 
-	return forEachMod(table,(row,namespace,id,urls) => {
+	return forEachMod(table, (row, namespace, id, urls) => {
 		concurrency.queueThread(async () => {
 			switch (namespace)
 			{
@@ -90,7 +90,7 @@ async function main(argc: number, argv: string[])
 
 	await concurrency.defer();
 
-	for(let i=0; i < newLines.length;i++)
+	for (let i = 0; i < newLines.length; i++)
 	{
 		let line = newLines[i];
 
@@ -101,7 +101,7 @@ async function main(argc: number, argv: string[])
 		else
 		{
 			// render this line
-			newLines[i] = formatModTable(line[1],line[2]);
+			newLines[i] = formatModTable(line[1], line[2]);
 		}
 	}
 
