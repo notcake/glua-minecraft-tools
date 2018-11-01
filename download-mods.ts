@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as crypto from "crypto";
 
 function SHA1(data: Buffer) {
-    return crypto.createHash("sha1").update(data).digest("hex");
+	return crypto.createHash("sha1").update(data).digest("hex");
 }
 
 export interface IDownloadedMod {
