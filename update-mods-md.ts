@@ -1,8 +1,7 @@
-import * as fs from "fs";
-
 import { ConcurrentManager } from "./libs/concurrency";
 import { formatModTable, parseTable, getListedVersions, forEachMod } from "./libs/md-tools";
 import { getCurseforgeUrls } from "./libs/curseforge-tools";
+import { readUri } from "./libs/utils";
 
 export function updateModIDs(concurrency: ConcurrentManager, table: string[][]): Promise<string[][]>
 {
@@ -50,11 +49,18 @@ async function main(argc: number, argv: string[])
 {
 	if (argc != 3)
 	{
-		console.error("Usage: ts-node update-mods-md <mods.md> > output.md");
+		console.error("Usage: ts-node update-mods-md <mods.md file or url> > output.md");
 		process.exit(1);
 	}
 
-	const data = fs.readFileSync(process.argv[2], "utf-8");
+	const data = await readUri(process.argv[2]);
+	if (data == null)
+	{
+		console.error("Unable to read from " + process.argv[2] + "!");
+		process.exit(1);
+		return;
+	}
+
 	const lines = data.split("\n");
 	const newLines: (string | [number,string[][],number[]])[] = [];
 
