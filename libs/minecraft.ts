@@ -91,3 +91,76 @@ export class Whitelist
 	}
 }
 
+export class ServerProperties
+{
+	private orderedProperties: string[] = [];
+	private properties: { [_: string]: string } = {};
+
+	public constructor()
+	{
+	}
+
+	public get(key: string): string|null
+	{
+		return this.properties[key];
+	}
+
+	public set(key: string, value: string)
+	{
+		if (this.properties[key] == null)
+		{
+			this.orderedProperties.push(key);
+		}
+
+		this.properties[key] = value;
+	}
+
+	public save(path: string)
+	{
+		const data = this.orderedProperties.map(x => x + "=" + this.properties[x] + "\n").join("");
+		fs.writeFileSync(path, data);
+	}
+
+	public static fromFile(path: string): ServerProperties|null
+	{
+		try
+		{
+			const data = fs.readFileSync(path, "utf-8");
+			return ServerProperties.fromBlob(data);
+		}
+		catch (e)
+		{
+			if (e.code == "ENOENT") { return null; }
+
+			throw e;
+		}
+	}
+
+	public static fromBlob(blob: string): ServerProperties
+	{
+		const serverProperties = new ServerProperties();
+		const lines = blob.split("\n");
+
+		for (let line of lines)
+		{
+			if (line.indexOf("#") != -1)
+			{
+				line = line.substring(0, line.indexOf("#"));
+			}
+			line = line.trim();
+
+			if (line == "") { continue; }
+
+			if (line.indexOf("=") == -1)
+			{
+				console.error("Failed to parse \"" + line + "\" in server.properties!");
+				continue;
+			}
+
+			serverProperties.set(line.substring(0, line.indexOf("=")), line.substring(line.indexOf("=") + 1));
+		}
+
+		return serverProperties;
+	}
+}
+
