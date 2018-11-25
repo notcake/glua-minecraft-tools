@@ -43,7 +43,6 @@ export function findModId(row: string[]): [string, string]|null
 		if (match == null) { continue; }
 
 		const url = match[1];
-		console.log(url);
 
 		const curseforgeMatch = url.match(/https?:\/\/minecraft.curseforge.com\/projects\/([^\/]+)\//);
 		if (curseforgeMatch != null) { return ["curseforge", curseforgeMatch[1]]; }
