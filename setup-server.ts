@@ -4,7 +4,7 @@ import * as path from "path";
 import { Document } from "./libs/markdown";
 import { isForgeInstalled, installForge, getInstalledForgeVersion } from "./libs/forgemod";
 import { WhitelistTable } from "./libs/whitelist-table";
-import { Whitelist } from "./libs/minecraft";
+import { ServerProperties, Whitelist } from "./libs/minecraft";
 import { parseArguments, readUri, toSet } from "./libs/utils";
 
 async function main(argc: number, argv: string[])
@@ -67,7 +67,7 @@ async function main(argc: number, argv: string[])
 		{
 			if (whitelist.containsUser(name))
 			{
-				console.log("Whitelist: " + whitelist.getUserUuid(name) + ": " + name + " is already present.");
+				console.log("Whitelist: " + whitelist.getUserUuid(name) + ": " + name + " already present.");
 				continue;
 			}
 
@@ -78,7 +78,7 @@ async function main(argc: number, argv: string[])
 				continue;
 			}
 
-			console.log("Whitelist: " + whitelist.getUserUuid(name) + ": " + name);
+			console.log("Whitelist: " + whitelist.getUserUuid(name) + ": " + name + " added.");
 		}
 
 		const whitelistNamesSet = toSet(whitelistNames);
@@ -90,7 +90,32 @@ async function main(argc: number, argv: string[])
 			}
 		}
 		whitelist.save(whitelistPath);
-		console.log("Whitelist: Wrote " + serverDirectory + "/whitelist.json");
+		console.log("Whitelist: Wrote " + whitelistPath);
+	}
+
+	// server.properties
+	const serverPropertiesPath = serverDirectory + "/server.properties";
+	const serverProperties = ServerProperties.fromFile(serverPropertiesPath) || new ServerProperties();
+	let serverPropertiesNeedsSaving = false;
+	function set(key: string, value: string)
+	{
+		if (serverProperties.get(key) == value)
+		{
+			console.log("Properties: " + key + " already set to " + value);
+			return;
+		}
+
+		serverProperties.set(key, value);
+		console.log("Properties: Setting " + key + " to " + value);
+		serverPropertiesNeedsSaving = true;
+	}
+	set("allow-flight", "true");
+	set("white-list", "true");
+	set("level-type", "BIOMESOP");
+	if (serverPropertiesNeedsSaving)
+	{
+		serverProperties.save(serverPropertiesPath);
+		console.log("Properties: Wrote " + serverPropertiesPath);
 	}
 
 	// 
