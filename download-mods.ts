@@ -189,17 +189,17 @@ async function main(argc: number, argv: string[])
 
 								try
 								{
-									let fileData = await downloadModFromCurseforge(url, (progressData) => {
+									let [contents, filename] = await downloadModFromCurseforge(url, (progressData) => {
 										console.error("Downloading " + namespace + ":" + id + " @ " + `${Math.round(progressData.percent * 1000) / 10}%...`);
 									});
 
 									console.error("Saving " + namespace + ":" + id + "...");
-									fs.writeFileSync(`${targetDirName}/${currentSection}/${fileData.filename}`, fileData.contents);
+									fs.writeFileSync(`${targetDirName}/${currentSection}/${filename}`, contents);
 
 									manifest[currentSection][`${namespace}:${id}`] = {
-										filename: fileData.filename,
+										filename: filename,
 										url,
-										hash: SHA1(fileData.contents),
+										hash: SHA1(contents),
 									};
 									fs.writeFileSync(`${targetDirName}/manifest.json`, JSON.stringify(manifest, null, 4));
 								}

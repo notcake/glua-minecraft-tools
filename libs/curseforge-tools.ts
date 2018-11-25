@@ -1,11 +1,9 @@
 // curseforge tools
 // a common file containing the API to interact with the curseforge site
 import * as request from "request-promise";
-import * as url from "url";
-import * as path from "path";
-
-const progress = require("request-progress");
 const fakeUserAgent = require("fake-useragent");
+
+import { download, IDownloadProgress } from "./download";
 
 export interface IDownloadedMod
 {
@@ -89,48 +87,7 @@ interface IRequestProgress {
 	}
 }
 
-export function downloadModFromCurseforge(curseforgeURL: string, progressCb: (data: IRequestProgress) => void): Promise<IDownloadedMod>
+export function downloadModFromCurseforge(curseforgeUrl: string, progressCallback: ((_: IDownloadProgress) => void)|null = null): Promise<[Buffer, string]>
 {
-	return new Promise<IDownloadedMod>((resolve, reject) => {
-		let reqState = request(
-			getFileURLFromCurseforge(curseforgeURL),
-			{
-				encoding: null, // for a Buffer
-			},
-			(err,result,body) => {
-				if(err)
-				{
-					reject(err);
-				}
-				else
-				{
-					if (result.statusCode !== 200)
-					{
-						return reject(`Non-200 status code returned by curseforge`);
-					}
-
-					// fallback to everything after the last slash
-					let filename = result.request.uri.href.split("/").pop() as string;
-
-					// let's try some parsing magic
-					let urlData = url.parse(result.request.uri.href);				
-					if(urlData && urlData.pathname)
-					{
-						let pathData = path.parse(urlData.pathname);
-						if(pathData && pathData.base) { filename = pathData.base; }
-					}
-
-					resolve({
-						contents: body,
-						filename,
-						url: curseforgeURL,
-					});
-				}
-			}
-		);
-
-		progress(reqState).on("progress", progressCb)
-
-		reqState.catch(reject);
-	})
+	return download(getFileURLFromCurseforge(curseforgeUrl), progressCallback);
 }
