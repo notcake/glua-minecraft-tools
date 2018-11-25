@@ -35,6 +35,9 @@ export function updateModIDs(concurrency: ConcurrentManager, table: string[][]):
 						}
 					}
 					break;
+				case "url":
+					console.error("Skipping raw URLs for " + row[0] + ".");
+					break;
 				default:
 					console.error(row[0] + ": Unknown id " + namespace + ":" + id + ".");
 					break;

@@ -39,8 +39,16 @@ export function findModId(row: string[]): [string, string]|null
 {
 	for (let cell of row)
 	{
-		const match = cell.match(/https?:\/\/minecraft.curseforge.com\/projects\/([^\/]+)\//);
-		if (match != null) { return ["curseforge", match[1]]; }
+		const match = cell.match(/\[[^\]]+\]\(([^)]+)\)/);
+		if (match == null) { continue; }
+
+		const url = match[1];
+		console.log(url);
+
+		const curseforgeMatch = url.match(/https?:\/\/minecraft.curseforge.com\/projects\/([^\/]+)\//);
+		if (curseforgeMatch != null) { return ["curseforge", curseforgeMatch[1]]; }
+
+		return ["url", url];
 	}
 	return null;
 }
