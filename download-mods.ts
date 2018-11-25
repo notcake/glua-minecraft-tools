@@ -6,12 +6,6 @@ function SHA1(data: Buffer)
 	return crypto.createHash("sha1").update(data).digest("hex");
 }
 
-export interface IDownloadedMod {
-	url: string;
-	filename: string;
-	contents: Buffer;
-}
-
 export interface IManifest {
 	[sectionName: string]: {
 		[modID: string]: {
@@ -22,9 +16,9 @@ export interface IManifest {
 	};
 };
 
-import { parseTable, forEachMod, getListedVersions } from "./md-tools";
-import { downloadModFromCurseforge } from "./curseforge-tools";
-import { ConcurrentManager } from "./concurrency";
+import { ConcurrentManager } from "./libs/concurrency";
+import { parseTable, forEachMod, getListedVersions } from "./libs/md-tools";
+import { downloadModFromCurseforge } from "./libs/curseforge-tools";
 
 async function main(argc: number, argv: string[])
 {

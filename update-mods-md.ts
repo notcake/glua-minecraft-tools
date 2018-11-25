@@ -1,8 +1,8 @@
 import * as fs from "fs";
 
-import { formatModTable, parseTable, getListedVersions, forEachMod } from "./md-tools";
-import { getCurseforgeUrls } from "./curseforge-tools";
-import { ConcurrentManager } from "./concurrency";
+import { ConcurrentManager } from "./libs/concurrency";
+import { formatModTable, parseTable, getListedVersions, forEachMod } from "./libs/md-tools";
+import { getCurseforgeUrls } from "./libs/curseforge-tools";
 
 export function updateModIDs(concurrency: ConcurrentManager, table: string[][]): Promise<string[][]>
 {

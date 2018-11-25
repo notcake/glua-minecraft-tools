@@ -1,33 +1,38 @@
 // curseforge tools
 // a common file containing the API to interact with the curseforge site
 import * as request from "request-promise";
-import { IDownloadedMod } from "./download-mods";
-
-const fakeUa = require("fake-useragent");
-
-request.defaults({
-	headers: {
-		["User-Agent"]: fakeUa(),
-	}
-})
-
 import * as url from "url";
 import * as path from "path";
 
 const progress = require("request-progress");
+const fakeUserAgent = require("fake-useragent");
+
+export interface IDownloadedMod
+{
+	url: string;
+	filename: string;
+	contents: Buffer;
+}
+
+request.defaults({
+	headers: {
+		["User-Agent"]: fakeUserAgent(),
+	}
+})
 
 const versionMap = {
-	"1.7":	"1738749986%3A5",
+	"1.7":	  "1738749986%3A5",
 	// "1.7.10": "2020709689%3A4449",
-	"1.7.10":	"1738749986%3A5",
+	"1.7.10": "1738749986%3A5",
 	"1.10":   "1738749986%3A572",
 	// "1.10.2": "2020709689%3A6170",
-	"1.10.2":   "1738749986%3A572",
+	"1.10.2": "1738749986%3A572",
 	"1.11":   "1738749986%3A599",
 	"1.11.2": "2020709689%3A6452",
 	"1.12":   "1738749986%3A628",
 	"1.12.2": "1738749986%3A628"
 };
+
 async function getCurseforgeLinkForVersion(id: string, version: string): Promise<string|null>
 {
 	const body = await request.get("https://minecraft.curseforge.com/projects/" + id + "/files?filter-game-version=" + versionMap[version]);
