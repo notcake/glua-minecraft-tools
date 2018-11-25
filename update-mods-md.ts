@@ -1,51 +1,87 @@
 import { ConcurrentManager } from "./libs/concurrency";
-import { formatModTable, parseTable, getListedVersions, forEachMod } from "./libs/md-tools";
 import { getCurseforgeUrls } from "./libs/curseforge-tools";
+import { Document, Section, ISection, Table, ITable, IElementCollection } from "./libs/markdown";
+import { isModTable, getModId, getModName, getModUrls, getTableVersions } from "./libs/mod-table";
 import { readUri } from "./libs/utils";
 
-export function updateModIDs(concurrency: ConcurrentManager, table: string[][]): Promise<string[][]>
+async function processTable(table: ITable): Promise<void>
 {
-	const versions = getListedVersions(table);
+	if (!isModTable(table)) { return; }
 
-	return forEachMod(table, (row, namespace, id, urls) => {
-		concurrency.queueThread(async () => {
-			switch (namespace)
-			{
-				case "curseforge":
-					const newUrls = await getCurseforgeUrls(id, versions);
-					console.error("Processing " + namespace + ":" + id + "...");
-					for (let j = 0; j < versions.length; j++)
+	const concurrency = new ConcurrentManager(15);
+
+	const versions = getTableVersions(table);
+
+	for (let y = 0; y < table.getRowCount(); y++)
+	{
+		const row = table.getRow(y)!;
+		const modId = getModId(row);
+		if (modId == null) { continue; }
+
+		const [namespace, id] = modId;
+		const modName = getModName(row);
+		const previousUrls = getModUrls(row);
+		switch (namespace)
+		{
+			case "curseforge":
+				concurrency.queueThread(async () =>
 					{
-						const version = versions[j];
-						const previousUrl = urls[j];
-						const nextUrl	 = newUrls[version];
-						if (previousUrl != nextUrl)
+						const newUrls = await getCurseforgeUrls(id, versions);
+
+						console.error("Processing " + namespace + ":" + id + "...");
+						for (let i = 0; i < versions.length; i++)
 						{
-							const previous = previousUrl ? previousUrl.match(/\/([0-9]+)$/)![1] : null;
-							const next	 = nextUrl ? nextUrl.match(/\/([0-9]+)$/)![1] : null;
-							if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
+							const version = versions[i];
+
+							const previousUrl = previousUrls[i];
+							const nextUrl	  = newUrls[version];
+
+							if (previousUrl != nextUrl)
 							{
-								console.error("	" + version + ": " + previous + " -> " + next);
-								row[2 + j] = "[" + version + "](" + nextUrl + ")";
-							}
-							else
-							{
-								console.error("	!!! " + version + ": " + previous + " -> " + next);
+								const previous = previousUrl ? previousUrl.match(/\/([0-9]+)$/)![1] : null;
+								const next     = nextUrl     ? nextUrl.match(/\/([0-9]+)$/)![1]     : null;
+								if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
+								{
+									console.error(" " + version + ": " + previous + " -> " + next);
+									row.setCell(2 + i, " [" + version + "](" + nextUrl + ")");
+								}
+								else
+								{
+									console.error(" !!! " + version + ": " + previous + " -> " + next);
+								}
 							}
 						}
 					}
-					break;
-				case "url":
-					console.error("Skipping raw URLs for " + row[0] + ".");
-					break;
-				default:
-					console.error(row[0] + ": Unknown id " + namespace + ":" + id + ".");
-					break;
-			}
-		});
+				);
+				break;
+			case "url":
+				console.error(modName + ": Skipping raw URLs.");
+				break;
+			default:
+				console.error(modName + ": Unknown id " + namespace + ":" + id + ".");
+				break;
+		}
+	}
 
-		return;
-	});
+	await concurrency.defer();
+
+	table.formatWidths();
+}
+
+async function processSection(section: IElementCollection): Promise<void>
+{
+	for (let i = 0; i < section.getCount(); i++)
+	{
+		const element = section.get(i);
+		if (element instanceof Section)
+		{
+			await processSection(element as ISection);
+		}
+		else if (element instanceof Table)
+		{
+			await processTable(element as ITable);
+		}
+	}
 }
 
 async function main(argc: number, argv: string[])
@@ -64,58 +100,16 @@ async function main(argc: number, argv: string[])
 		return;
 	}
 
-	const lines = data.split("\n");
-	const newLines: (string | [number,string[][],number[]])[] = [];
 
-	const concurrency = new ConcurrentManager(15);
+	const document = Document.fromString(data);
+	await processSection(document);
 
-	let i = 0;
-	while (i < lines.length)
+	let markdown = document.toString();
+	if (markdown.endsWith("\n"))
 	{
-		const line = lines[i];
-
-		if (line.indexOf("|") == -1)
-		{
-			newLines.push(line);
-			i++;
-			continue;
-		}
-		
-		const [nextI, table, columnWidths] = parseTable(lines, i);
-		if (table[0][0].toLowerCase() != "mod name")
-		{
-			for (let j = i; j < nextI; j++)
-			{
-				newLines.push(lines[j]);
-			}
-			i = nextI;
-			continue;
-		}
-
-		updateModIDs(concurrency,table);
-		newLines.push([nextI, table, columnWidths]);
-		i = nextI;
+		markdown = markdown.substring(0, markdown.length - 1);
 	}
-
-	await concurrency.defer();
-
-	for (let i = 0; i < newLines.length; i++)
-	{
-		let line = newLines[i];
-
-		if(typeof line === "string")
-		{
-			// no changes needed
-		}
-		else
-		{
-			// render this line
-			newLines[i] = formatModTable(line[1], line[2]);
-		}
-	}
-
-	console.log(newLines.join("\n"));
+	console.log(markdown);
 }
 
 main(process.argv.length, process.argv);
-
