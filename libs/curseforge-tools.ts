@@ -22,16 +22,18 @@ request.defaults({
 
 const versionMap = {
 	"1.7":	  "1738749986%3A5",
-	// "1.7.10": "2020709689%3A4449",
-	"1.7.10": "1738749986%3A5",
+	"1.7.10": "2020709689%3A4449",
 	"1.10":   "1738749986%3A572",
-	// "1.10.2": "2020709689%3A6170",
-	"1.10.2": "1738749986%3A572",
+	"1.10.2": "2020709689%3A6170",
 	"1.11":   "1738749986%3A599",
 	"1.11.2": "2020709689%3A6452",
 	"1.12":   "1738749986%3A628",
 	"1.12.2": "1738749986%3A628"
 };
+versionMap["1.7.10"] = versionMap["1.7"];
+versionMap["1.10.2"] = versionMap["1.10"];
+versionMap["1.11.2"] = versionMap["1.11"];
+versionMap["1.12.2"] = versionMap["1.12"];
 
 async function getCurseforgeLinkForVersion(id: string, version: string): Promise<string|null>
 {

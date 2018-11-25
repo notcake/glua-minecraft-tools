@@ -19,6 +19,7 @@ export interface IManifest {
 import { ConcurrentManager } from "./libs/concurrency";
 import { parseTable, forEachMod, getListedVersions } from "./libs/md-tools";
 import { downloadModFromCurseforge } from "./libs/curseforge-tools";
+import { readUri } from "./libs/utils";
 
 async function main(argc: number, argv: string[])
 {
@@ -28,7 +29,14 @@ async function main(argc: number, argv: string[])
 		process.exit(1);
 	}
 
-	const data = fs.readFileSync(process.argv[2], "utf-8");
+	const data = await readUri(process.argv[2]);
+	if (data == null)
+	{
+		console.error("Unable to read from " + process.argv[2] + "!");
+		process.exit(1);
+		return;
+	}
+
 	const lines = data.split("\n");
 	const targetDirName = process.argv[3];
 
