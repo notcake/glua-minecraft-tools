@@ -79,12 +79,10 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 	{
 		const modTable = new ModTable(table);
 		const modCount = modTable.getModCount();
+		const modCountDigs = Math.ceil(Math.log10(modCount));
 		for (let i = 0; i < modCount; i++)
 		{
-			let progress = (i + 1).toString();
-			progress = " ".repeat(Math.max(0, modCount.toString().length - progress.length)) + progress;
-			progress = "[" + progress + "/" + modCount.toString() + "]";
-
+			const progress = `[${(i + 1).toString().padStart(modCountDigs, ' ')}/${modCount.toString()}]`;
 			const [namespace, id] = modTable.getModId(i)!;
 
 			// Check if enabled
@@ -116,17 +114,18 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 
 					downloadQueue.push({
 						id: mod.id,
-						url: mod.urls[minecraftVersion],
+						url: mod.urls[minecraftVersion] + '/download',
 						version: getCurseforgeFileID(mod.urls[minecraftVersion])!
 					});
 
-					for(let dependency of await mod.getDependencies(minecraftVersion))
+					const dependencies = await mod.getDependencies(minecraftVersion);
+					for(const dependency of dependencies)
 					{
 						if(dependency.availableForVersion(minecraftVersion))
 						{
 							downloadQueue.push({
 								id: dependency.id,
-								url: dependency.urls[minecraftVersion],
+								url: dependency.urls[minecraftVersion] + '/download',
 								version: getCurseforgeFileID(dependency.urls[minecraftVersion])!
 							});
 						}
@@ -146,7 +145,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 			}
 
 			// Download new version
-			for(let {id: itemId, url: itemUrl, version: itemVersion} of downloadQueue)
+			for(const {id: itemId, url: itemUrl, version: itemVersion} of downloadQueue)
 			{
 				const existingFileName = manifest.getModFileName(namespace, itemId);
 				if (manifest.getModVersion(namespace, itemId) != itemVersion ||
