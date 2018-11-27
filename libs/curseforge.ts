@@ -99,7 +99,7 @@ export class Mod
 		this.urls = {};
 		for (let version of versions)
 		{
-			const body = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/files?filter-game-version=${versionMap[version]}`);
+			const body = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/files?filter-game-version=${versionMap[version]}?filter-related-dependencies=3`);
 			const regex = /\/projects\/[^\/]+\/files\/([0-9]+)\/download/;
 			const match = body.match(regex);
 			if (match === null){ continue; }
