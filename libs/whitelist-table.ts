@@ -42,27 +42,12 @@ export class WhitelistTable
 
 	public static fromDocument(document: Document): WhitelistTable|null
 	{
-		const queue: IElementCollection[] = [];
-		queue.push(document);
-
-		let section: IElementCollection|undefined;
-		while (section = queue.pop())
+		for (let table of document.getTables())
 		{
-			for (let i = 0; i < section.getCount(); i++)
+			if (table.getHeader().getCellCount() >= 3 &&
+			    table.getHeader().getCell(0)!.trim().toLowerCase() == "name")
 			{
-				if (section.get(i) instanceof Section)
-				{
-					queue.push(section.get(i) as ISection);
-				}
-				else if (section.get(i) instanceof Table)
-				{
-					const table = section.get(i) as ITable;
-					if (table.getHeader().getCellCount() >= 3 &&
-					    table.getHeader().getCell(0)!.trim().toLowerCase() == "name")
-					{
-						return new WhitelistTable(table);
-					}
-				}
+				return new WhitelistTable(table);
 			}
 		}
 

@@ -331,6 +331,32 @@ export class Document extends ElementCollection implements IDocument
 	}
 
 	// Document
+	public getTables(): ITable[]
+	{
+		const tables: ITable[] = [];
+
+		const queue: IElementCollection[] = [];
+		queue.push(this);
+
+		let section: IElementCollection|undefined;
+		while (section = queue.pop())
+		{
+			for (let i = 0; i < section.getCount(); i++)
+			{
+				if (section.get(i) instanceof Section)
+				{
+					queue.push(section.get(i) as ISection);
+				}
+				else if (section.get(i) instanceof Table)
+				{
+					tables.push(section.get(i) as ITable);
+				}
+			}
+		}
+
+		return tables;
+	}
+
 	public static fromString(string: string): Document
 	{
 		return new Document(string);

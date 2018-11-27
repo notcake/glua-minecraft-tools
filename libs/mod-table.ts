@@ -1,9 +1,14 @@
-import { ITable, ITableRow } from "./markdown";
+import { Document, ITable, ITableRow } from "./markdown";
 
 export function isModTable(table: ITable): boolean
 {
 	const text = table.getHeader().getCell(0);
 	return text != null ? text.trim().toLowerCase() == "mod name" : false;
+}
+
+export function getModTables(document: Document): ITable[]
+{
+	return document.getTables().filter(isModTable);
 }
 
 export function getModId(row: ITableRow): [string, string]|null
