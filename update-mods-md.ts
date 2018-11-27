@@ -1,26 +1,19 @@
 import { ConcurrentManager } from "./libs/concurrency";
 import { getCurseforgeUrls } from "./libs/curseforge-tools";
 import { Document, Section, ISection, Table, ITable, IElementCollection } from "./libs/markdown";
-import { isModTable, getModTables, getModId, getModName, getModUrls, getTableVersions } from "./libs/mod-table";
+import { getModTables, ModTable } from "./libs/mod-table";
 import { readUri } from "./libs/utils";
 
-async function processTable(table: ITable): Promise<void>
+async function processTable(modTable: ModTable): Promise<void>
 {
-	if (!isModTable(table)) { return; }
-
 	const concurrency = new ConcurrentManager(15);
 
-	const versions = getTableVersions(table);
+	const versions = modTable.getVersions();
 
-	for (let y = 0; y < table.getRowCount(); y++)
+	for (let i = 0; i < modTable.getModCount(); i++)
 	{
-		const row = table.getRow(y)!;
-		const modId = getModId(row);
-		if (modId == null) { continue; }
-
-		const [namespace, id] = modId;
-		const modName = getModName(row);
-		const previousUrls = getModUrls(row);
+		const [namespace, id] = modTable.getModId(i)!;
+		const modName = modTable.getModName(i)!;
 		switch (namespace)
 		{
 			case "curseforge":
@@ -29,11 +22,11 @@ async function processTable(table: ITable): Promise<void>
 						const newUrls = await getCurseforgeUrls(id, versions);
 
 						console.error("Processing " + namespace + ":" + id + "...");
-						for (let i = 0; i < versions.length; i++)
+						for (let j = 0; j < versions.length; j++)
 						{
-							const version = versions[i];
+							const version = versions[j];
 
-							const previousUrl = previousUrls[i];
+							const previousUrl = modTable.getModUrl(i, version);
 							const nextUrl	  = newUrls[version];
 
 							if (previousUrl != nextUrl)
@@ -43,7 +36,7 @@ async function processTable(table: ITable): Promise<void>
 								if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
 								{
 									console.error(" " + version + ": " + previous + " -> " + next);
-									row.setCell(2 + i, " [" + version + "](" + nextUrl + ")");
+									modTable.setModUrl(i, version, nextUrl);
 								}
 								else
 								{
@@ -65,7 +58,7 @@ async function processTable(table: ITable): Promise<void>
 
 	await concurrency.defer();
 
-	table.formatWidths();
+	modTable.getTable().formatWidths();
 }
 
 async function main(argc: number, argv: string[])
@@ -88,7 +81,7 @@ async function main(argc: number, argv: string[])
 	const document = Document.fromString(data);
 	for (let table of getModTables(document))
 	{
-		await processTable(table);
+		await processTable(new ModTable(table));
 	}
 
 	let markdown = document.toString();

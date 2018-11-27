@@ -2,6 +2,10 @@ import * as request from "request-promise";
 
 const requestProgress = require("request-progress");
 
+import { ITable } from "./markdown";
+import { ModManifest } from "./mod-manifest";
+import { getModTables, ModTable } from "./mod-table";
+
 export interface IDownloadProgress {
 	percent: number,            // Overall percent (between 0 to 1)
 	speed: number,              // The download speed in bytes/sec
@@ -43,3 +47,16 @@ export async function download(url: string, progressCallback: ((_: IDownloadProg
 	);
 }
 
+export async function downloadMods(modTables: ITable[], version: string, modDirectory: string, manifestPath: string, log: (_: string) => void): Promise<void>
+{
+	const manifest = ModManifest.fromFile(manifestPath) || new ModManifest();
+
+	for (let table of modTables)
+	{
+		const modTable = new ModTable(table);
+		for (let i = 0; i < modTable.getModCount(); i++)
+		{
+			const [namespace, id] = modTable.getModId(i)!;
+		}
+	}
+}
