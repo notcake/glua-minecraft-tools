@@ -2,9 +2,6 @@
 // a common file containing the API to interact with the curseforge site
 import * as request from "request-promise";
 const fakeUserAgent = require("fake-useragent");
-
-import { download, IDownloadProgress } from "./download";
-
 type StringMap<V> = {[_: string]: V};
 
 
@@ -31,49 +28,60 @@ export function getCurseforgeFileID(url: string): string|null
 	return match != null ? match[1] : null;
 }
 
-	public constructor(url: string)
-	{
-		this.url = url.replace(/[\\\/]*$/, '');
-		this.downloadURL = this.url + '/download';
-		const id = CurseforgeLink.getFileId(this.url);
-		if(id === null)
-			throw new Error("Invalid curseforge mod url: " + url + ".")
-		this.fileId = id;
-	}
-
-	public static getFileId(url: string): string|null
-	{
-		const match = url.replace(/[\\\/]*$/, '').match(/\/([0-9]+)$/);
-		if(match === null)
-			return null;
-		return match[1];
-	}
-}
-
-export class CurseforgeMod
+export class Mod
 {
-	public readonly versions: string[];
 	public id: string;
-	public urls: StringMap<CurseforgeLink|null>;
-	public dependencies: StringMap<CurseforgeMod[]>;
+	public urls: StringMap<string>;
 
-	private _hasBeenDownloaded: boolean;
-
-	public get hasBeenDownloaded(): boolean {
-		return this._hasBeenDownloaded;
-	}
-
-	public availableForVersion(version: string) {
-		return this.versions.indexOf(version) !== -1 && !!this.urls[version];
-	}
-
-	private constructor(versions: string[])
+	public availableForVersion(version: string)
 	{
-		this.versions = versions;
+		return !!this.urls[version];
 	}
 
-	// I think swad or cake added this for a reason so I'm keeping it
-	private async resolveID(id: string): Promise<void>
+	private async *resolveDependencies(version: string): AsyncIterableIterator<Mod>
+	{
+		const body: string = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/relations/dependencies`);
+		if(!body) throw new Error("Unable to resolve dependencies for " + this.id + ".");
+
+		const urls = body.match(/<a href="https:\/\/minecraft\.curseforge\.com\/projects\/([^"]+)">/g);
+		if(!urls){return;} // No dependencies
+
+		const ids: string[] = urls
+			.map(url => url.match(/<a href="https:\/\/minecraft\.curseforge\.com\/projects\/([^"]+)">/)![1]);
+		for(let id of ids)
+		{
+			let dep: Mod|null = await Mod.fromID(id, [version]);
+			// circular dependencies (I'm looking at you Tesla Core Lib)
+			if(dep !== null)
+			{
+				if(dep.availableForVersion(version))
+				{
+					yield dep;
+				}
+			}
+		}
+	}
+
+	private dependencies: StringMap<Mod[]> = {};
+	public async getDependencies(version: string): Promise<Mod[]>
+	{
+		if(this.dependencies[version] === undefined)
+		{
+			this.dependencies[version] = [];
+			if(this.availableForVersion(version))
+			{
+				for await(let dependency of this.resolveDependencies(version))
+				{
+					let dependencies: Mod[] = await dependency.getDependencies(version);
+					this.dependencies[version].push(...dependencies);
+				}
+			}
+		}
+
+		return this.dependencies[version];
+	}
+
+	private async initialize(id: string, versions: string[]): Promise<void>
 	{
 		// Follow redirect
 		const body = await request.get("https://minecraft.curseforge.com/projects/" + id);
@@ -85,97 +93,31 @@ export class CurseforgeMod
 		const match = body.match(regex);
 		if (match != null) { id = match[1]; }
 		this.id = id;
-	}
 
-	private async getVersionLink(version: string): Promise<CurseforgeLink|null>
-	{
-		const body = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/files?filter-game-version=${versionMap[version]}`);
-		const regex = /\/projects\/[^\/]+\/files\/([0-9]+)\/download/;
-		const match = body.match(regex);
-		if (match == null)
-		{
-			return null;
-		}
-		return new CurseforgeLink(`https://minecraft.curseforge.com/projects/${this.id}/files/${match[1]}`);
-	}
-
-	private async resolveURLs(): Promise<void>
-	{
+		// Resolve all urls
 		this.urls = {};
-		for (let version of this.versions)
+		for (let version of versions)
 		{
-			const url = await this.getVersionLink(version);
-			if (url !== null)
-			{
-				this.urls[version] = url;
-			}
+			const body = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/files?filter-game-version=${versionMap[version]}`);
+			const regex = /\/projects\/[^\/]+\/files\/([0-9]+)\/download/;
+			const match = body.match(regex);
+			if (match === null){ continue; }
+			this.urls[version] = `https://minecraft.curseforge.com/projects/${this.id}/files/${match[1]}`;
 		}
 	}
 
-	private async resolveDependencies(): Promise<void>
-	{
-		this.dependencies = {};
-		for(let version of this.versions)
-			this.dependencies[version] = [];
-
-		const body: string = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/relations/dependencies`);
-		if(!body)
-		{
-			console.error(`Couldn't resolve dependencies for ${this.id}.`);
-			return;
-		}
-		const urls = body.match(/<a href="https:\/\/minecraft\.curseforge\.com\/projects\/([^"]+)">/g);
-		if(!urls)
-		{
-			return; // No dependencies
-		}
-		const ids: string[] = urls
-			.map(url => url.match(/<a href="https:\/\/minecraft\.curseforge\.com\/projects\/([^"]+)">/)![1]);
-
-		for(let id of ids)
-		{
-			let dep: CurseforgeMod|null = await CurseforgeMod.fromID(id, this.versions);
-			if(dep !== null) // fucking circular dependencies (I'm looking at you Tesla Core Lib)
-			{
-				for(let version of this.versions)
-				{
-					if(dep.availableForVersion(version))
-					{
-						this.dependencies[version].push(dep);
-					}
-				}
-			}
-		}
-	}
-
-	private async resolveEverything(id: string, resolveDependencies: boolean): Promise<this>
-	{
-		await this.resolveID(id);
-		await this.resolveURLs();
-		if(resolveDependencies)
-		{
-			await this.resolveDependencies();
-		}
-		return this;
-	}
-
-	public async download(version: string, progressCallback: (((_: IDownloadProgress) => void)|null) = null): Promise<[Buffer, string]>
-	{
-		const url = this.urls[version];
-		if(!url || !this.availableForVersion(version))
-			throw new Error("Cannot download a non-existent version of a mod.");
-		this._hasBeenDownloaded = true;
-		return download(url.downloadURL, progressCallback);
-	}
-
-	private static readonly ModLUT: StringMap<CurseforgeMod|null> = {};
-	public static async fromID(id: string, versions: string[], resolveDependencies: boolean = true) : Promise<CurseforgeMod|null>
+	private static readonly ModLUT: StringMap<Mod|null> = {};
+	public static async fromID(id: string, versions: string[]) : Promise<Mod|null>
 	{
 		if(this.ModLUT[id] === undefined)
 		{
-			this.ModLUT[id] = null; // fucking circular dependencies (I'm looking at you Tesla Core Lib)
-			let mod = this.ModLUT[id] = await new CurseforgeMod(versions).resolveEverything(id, resolveDependencies);
-			this.ModLUT[mod.id] = mod; // in case we were redirected somewhere else?
+			// circular dependencies (I'm looking at you Tesla Core Lib)
+			this.ModLUT[id] = null;
+			let mod = this.ModLUT[id] = new Mod();
+			// also add with the mod's final ID in case we were redirected somewhere else
+			this.ModLUT[mod.id] = mod;
+
+			await mod.initialize(id, versions);
 		}
 		else if(this.ModLUT[id] === null)
 			return null;
