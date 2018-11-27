@@ -75,14 +75,16 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 		const modCount = modTable.getModCount();
 		for (let i = 0; i < modCount; i++)
 		{
-			const progress = "[" + (i + 1).toString() + "/" + modCount.toString() + "]";
+			let progress = (i + 1).toString();
+			progress = " ".repeat(Math.max(0, modCount.toString().length - progress.length)) + progress;
+			progress = "[" + progress + "/" + modCount.toString() + "]";
 			
 			const [namespace, id] = modTable.getModId(i)!;
 			
 			// Check if enabled
 			if (!modTable.isModEnabled(i))
 			{
-				log(progress + " " + packModId(namespace, id) + ": Skipping.");
+				log(progress + "   " + packModId(namespace, id) + ": Skipping.");
 				continue;
 			}
 
@@ -92,7 +94,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 			const url = modTable.getModUrl(i, minecraftVersion);
 			if (url == null)
 			{
-				log(progress + " " + packModId(namespace, id) + ": No download URL for Minecraft " + minecraftVersion + " found!");
+				log(progress + " ! " + packModId(namespace, id) + ": No download URL for Minecraft " + minecraftVersion + " found!");
 				continue;
 			}
 
@@ -109,14 +111,14 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 					version = url;
 					break;
 				default:
-					log(progress + " " + packModId(namespace, id) + ": Cannot derive download URL!");
+					log(progress + " ! " + packModId(namespace, id) + ": Cannot derive download URL!");
 					break;
 			}
 
 			// Bail if no download URL found
 			if (downloadUrl == null || version == null)
 			{
-				log(progress + " " + packModId(namespace, id) + ": Unable to download!");
+				log(progress + " ! " + packModId(namespace, id) + ": Unable to download!");
 				continue;
 			}
 
@@ -131,7 +133,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 					try
 					{
 						fs.unlinkSync(modDirectory + "/" + existingFileName);
-						log(progress + " " + packModId(namespace, id) + ": Removed " + existingFileName);
+						log(progress + " - " + packModId(namespace, id) + " " + existingFileName);
 					}
 					catch (e)
 					{
@@ -143,14 +145,14 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 				let [data, fileName] = await download(downloadUrl);
 				fileName = sanitizeFileName(fileName);
 				fs.writeFileSync(modDirectory + "/" + fileName, data);
-				log(progress + " " + packModId(namespace, id) + ": Downloaded " + fileName + ".");
+				log(progress + " + " + packModId(namespace, id) + " " + fileName);
 				
 				manifest.updateMod(namespace, id, fileName, downloadUrl, version, hash("md5", data), hash("sha256", data));
 				manifest.save(manifestPath);
 			}
 			else
 			{
-				log(progress + " " + packModId(namespace, id) + ": Already downloaded.");
+				log(progress + "   " + packModId(namespace, id) + " " + existingFileName);
 			}
 		}
 	}
@@ -169,7 +171,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 			{
 				if (e.code != "ENOENT") { throw e; }
 			}
-			log(packModId(namespace, id) + ": Removed " + fileName);
+			log("- " + packModId(namespace, id) + " " + fileName);
 			manifest.removeMod(namespace, id);
 			manifest.save(manifestPath);
 		}
