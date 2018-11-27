@@ -18,7 +18,7 @@ export interface IManifest {
 
 import { ConcurrentManager } from "./libs/concurrency";
 import { parseTable, forEachMod, getListedVersions } from "./libs/md-tools";
-import { downloadModFromCurseforge } from "./libs/curseforge-tools";
+import { downloadModFromCurseforge } from "./libs/curseforge";
 import { readUri } from "./libs/utils";
 
 async function main(argc: number, argv: string[])

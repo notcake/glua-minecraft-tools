@@ -1,6 +1,16 @@
 import * as fs from "fs";
 import * as request from "request-promise";
 
+export function packModId(namespace: string, id: string): string
+{
+	return namespace + ":" + id;
+}
+
+export function unpackModId(id: string): [string, string]
+{
+	return [id.substring(0, id.indexOf(":")), id.substring(id.indexOf(":") + 1)];
+}
+
 export function parseArguments(argc: number, argv: string[]): [string[], { [_: string]: string }]
 {
 	const fixedArguments: string[] = [];

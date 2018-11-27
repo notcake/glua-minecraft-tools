@@ -1,8 +1,8 @@
 import { ConcurrentManager } from "./libs/concurrency";
-import { getCurseforgeUrls } from "./libs/curseforge-tools";
+import { getCurseforgeUrls, getCurseforgeFileId } from "./libs/curseforge";
 import { Document, Section, ISection, Table, ITable, IElementCollection } from "./libs/markdown";
 import { getModTables, ModTable } from "./libs/mod-table";
-import { readUri } from "./libs/utils";
+import { packModId, readUri } from "./libs/utils";
 
 async function processTable(modTable: ModTable): Promise<void>
 {
@@ -21,7 +21,7 @@ async function processTable(modTable: ModTable): Promise<void>
 					{
 						const newUrls = await getCurseforgeUrls(id, versions);
 
-						console.error("Processing " + namespace + ":" + id + "...");
+						console.error("Processing " + packModId(namespace, id) + "...");
 						for (let j = 0; j < versions.length; j++)
 						{
 							const version = versions[j];
@@ -31,8 +31,8 @@ async function processTable(modTable: ModTable): Promise<void>
 
 							if (previousUrl != nextUrl)
 							{
-								const previous = previousUrl ? previousUrl.match(/\/([0-9]+)$/)![1] : null;
-								const next     = nextUrl     ? nextUrl.match(/\/([0-9]+)$/)![1]     : null;
+								const previous = previousUrl ? getCurseforgeFileId(previousUrl) : null;
+								const next     = nextUrl     ? getCurseforgeFileId(nextUrl)     : null;
 								if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
 								{
 									console.error(" " + version + ": " + previous + " -> " + next);
@@ -51,7 +51,7 @@ async function processTable(modTable: ModTable): Promise<void>
 				console.error(modName + ": Skipping raw URLs.");
 				break;
 			default:
-				console.error(modName + ": Unknown id " + namespace + ":" + id + ".");
+				console.error(modName + ": Unknown id " + packModId(namespace, id) + ".");
 				break;
 		}
 	}

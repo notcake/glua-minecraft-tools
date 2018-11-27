@@ -15,7 +15,7 @@ export class ModTable
 {
 	private table: ITable;
 	private versions: { [_: string]: number } = {};
-	
+
 	public constructor(table: ITable)
 	{
 		this.table = table;
@@ -26,7 +26,7 @@ export class ModTable
 			this.versions[header.getCell(x)!.trim()] = x;
 		}
 	}
-	
+
 	public getTable(): ITable
 	{
 		return this.table;
@@ -82,17 +82,25 @@ export class ModTable
 
 		const row = this.table.getRow(index);
 		if (row == null) { return null; }
-		
+
 		const cell = row.getCell(column)!;
 		const match = cell.match(/\[[^\]]+\]\(([^\)]+)\)/);
 		return match ? match[1] : null;
+	}
+	
+	public isModEnabled(index: number): boolean
+	{
+		const row = this.table.getRow(index);
+		if (row == null) { return false; }
+
+		return row.getCell(1)!.indexOf("✔") != -1;
 	}
 
 	public setModUrl(index: number, version: string, url: string): boolean
 	{
 		const row = this.table.getRow(index);
 		if (row == null) { return false; }
-		
+
 		const column = this.versions[version];
 		if (column == null) { return false; }
 

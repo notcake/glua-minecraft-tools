@@ -1,5 +1,7 @@
 import * as fs from "fs";
 
+import { packModId, unpackModId } from "./utils";
+
 export type ModEntry = {
 	fileName: string;
 	url:      string;
@@ -23,22 +25,40 @@ export class ModManifest
 	
 	public containsMod(namespace: string, id: string): boolean
 	{
-		return this.mods[namespace + ":" + id] != null;
+		return this.mods[packModId(namespace, id)] != null;
 	}
 
-	public getMod(namespace: string, id: string): ModEntry|null
+	public getMods(): [string, string][]
 	{
-		return this.mods[namespace + ":" + id];
+		return Object.keys(this.mods).map(x => unpackModId(x));
+	}
+
+	public getModFileName(namespace: string, id: string): string|null
+	{
+		const modEntry = this.mods[packModId(namespace, id)];
+		return modEntry != null ? modEntry.fileName : null;
+	}
+
+	public getModVersion(namespace: string, id: string): string|null
+	{
+		const modEntry = this.mods[packModId(namespace, id)];
+		return modEntry != null ? modEntry.version : null;
+	}
+
+	public getModFileSHA256(namespace: string, id: string): string|null
+	{
+		const modEntry = this.mods[packModId(namespace, id)];
+		return modEntry != null ? modEntry.sha256 : null;
 	}
 	
 	public removeMod(namespace: string, id: string)
 	{
-		delete this.mods[namespace + ":" + id];
+		delete this.mods[packModId(namespace, id)];
 	}
 	
 	public updateMod(namespace: string, id: string, fileName: string, url: string, version: string, md5: string, sha256: string)
 	{
-		this.mods[namespace + ":" + id] = {
+		this.mods[packModId(namespace, id)] = {
 			fileName: fileName,
 			url: url,
 			version: version,
@@ -74,9 +94,8 @@ export class ModManifest
 		const mods = JSON.parse(json);
 		for (let fullId in mods)
 		{
-			const namespace = fullId.substring(0, fullId.indexOf(":"));
-			const id        = fullId.substring(fullId.indexOf(":") + 1);
-
+			const [namespace, id] = unpackModId(fullId);
+			
 			manifest.addMod(
 				namespace,
 				id,
