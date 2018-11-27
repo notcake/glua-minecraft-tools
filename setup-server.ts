@@ -2,7 +2,9 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { Document } from "./libs/markdown";
+import { downloadMods } from "./libs/download";
 import { isForgeInstalled, installForge, getInstalledForgeVersion } from "./libs/forgemod";
+import { getModTables } from "./libs/mod-table";
 import { WhitelistTable } from "./libs/whitelist-table";
 import { ServerProperties, Whitelist } from "./libs/minecraft";
 import { parseArguments, readUri, toSet } from "./libs/utils";
@@ -13,13 +15,13 @@ async function main(argc: number, argv: string[])
 	let argumentsValid = fixedArguments.length == 3;
 	if (!argumentsValid)
 	{
-		console.error("Usage: ts-node setup-server.ts <directory> <version> <mods-and-players.md> [--forge-version version]");
+		console.error("Usage: ts-node setup-server.ts <directory> <minecraft-version> <mods-and-players.md> [--forge-version version]");
 		process.exit(1);
 	}
 
-	const serverDirectory = fixedArguments[0];
-	const version         = fixedArguments[1];
-	const markdownUri     = fixedArguments[2];
+	const serverDirectory  = fixedArguments[0];
+	const minecraftVersion = fixedArguments[1];
+	const markdownUri      = fixedArguments[2];
 	let forgeVersion: string|null = mapArguments["forge-version"];
 
 	const markdownData = await readUri(markdownUri);
@@ -34,10 +36,10 @@ async function main(argc: number, argv: string[])
 	const whitelistTable = WhitelistTable.fromDocument(document);
 
 	// forge install
-	if (!isForgeInstalled(serverDirectory, version))
+	if (!isForgeInstalled(serverDirectory, minecraftVersion))
 	{
 		console.log("Forge: Installing forge at " + serverDirectory + "...");
-		forgeVersion = await installForge(serverDirectory, version, forgeVersion, x => console.log("Forge: " + x));
+		forgeVersion = await installForge(serverDirectory, minecraftVersion, forgeVersion, x => console.log("Forge: " + x));
 	}
 	else
 	{
@@ -47,7 +49,7 @@ async function main(argc: number, argv: string[])
 
 	// eula.txt
 	if (!fs.existsSync(serverDirectory + "/eula.txt") ||
-            fs.readFileSync(serverDirectory + "/eula.txt", "utf-8").indexOf("eula=true\n") == -1)
+	    fs.readFileSync(serverDirectory + "/eula.txt", "utf-8").indexOf("eula=true\n") == -1)
 	{
 		console.log("EULA: Writing eula.txt...");
 		fs.writeFileSync(serverDirectory + "/eula.txt", "eula=true\n");
@@ -118,8 +120,10 @@ async function main(argc: number, argv: string[])
 		console.log("Properties: Wrote " + serverPropertiesPath);
 	}
 
-	// 
-	const setup = "ts-node setup-server.ts \"" + path.resolve(serverDirectory) + "\" " + version + " \"" + markdownUri + "\" --forge-version " + forgeVersion;
+	// mods
+	await downloadMods(getModTables(document), minecraftVersion, serverDirectory + "/mods", serverDirectory + "/glua-minecraft-tools-manifest.json", x => console.log("Mods: " + x));
+
+	const setup = "ts-node setup-server.ts \"" + path.resolve(serverDirectory) + "\" " + minecraftVersion + " \"" + markdownUri + "\" --forge-version " + forgeVersion;
 	console.log("");
 	console.log("To repeat this install, run");
 	console.log("    " + setup);

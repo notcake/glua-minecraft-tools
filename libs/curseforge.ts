@@ -65,6 +65,12 @@ export async function getCurseforgeUrls(id: string, versions: string[]): Promise
 	return urls;
 }
 
+export function getCurseforgeFileId(url: string): string|null
+{
+	const match = url.match(/\/([0-9]+)$/);
+	return match != null ? match[1] : null;
+}
+
 export function getFileURLFromCurseforge(curseforgeURL: string)
 {
 	// try and get rid of any trailing forwardslashes
