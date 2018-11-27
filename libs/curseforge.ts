@@ -72,6 +72,7 @@ export class Mod
 			{
 				for await(let dependency of this.resolveDependencies(version))
 				{
+					this.dependencies[version].push(dependency);
 					let dependencies: Mod[] = await dependency.getDependencies(version);
 					this.dependencies[version].push(...dependencies);
 				}
