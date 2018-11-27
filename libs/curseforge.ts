@@ -3,15 +3,6 @@
 import * as request from "request-promise";
 const fakeUserAgent = require("fake-useragent");
 
-import { download, IDownloadProgress } from "./download";
-
-export interface IDownloadedMod
-{
-	url: string;
-	filename: string;
-	contents: Buffer;
-}
-
 request.defaults({
 	headers: {
 		["User-Agent"]: fakeUserAgent(),
@@ -69,31 +60,4 @@ export function getCurseforgeFileId(url: string): string|null
 {
 	const match = url.match(/\/([0-9]+)$/);
 	return match != null ? match[1] : null;
-}
-
-export function getFileURLFromCurseforge(curseforgeURL: string)
-{
-	// try and get rid of any trailing forwardslashes
-	const match = curseforgeURL.match(/(^[\s\S]+?[^\/]+)\/*$/)
-	if (match != null) { curseforgeURL = match[1]; }
-	
-	return `${curseforgeURL}/download`;
-}
-
-interface IRequestProgress {
-	percent: number,		   	// Overall percent (between 0 to 1)
-	speed: number,			  // The download speed in bytes/sec
-	size: {
-		total: number,			// The total payload size in bytes
-		transferred: number   	// The transferred payload size in bytes
-	},
-	time: {
-		elapsed: number,		// The total elapsed seconds since the start (3 decimals)
-		remaining: number	   // The remaining seconds to finish (3 decimals)
-	}
-}
-
-export function downloadModFromCurseforge(curseforgeUrl: string, progressCallback: ((_: IDownloadProgress) => void)|null = null): Promise<[Buffer, string]>
-{
-	return download(getFileURLFromCurseforge(curseforgeUrl), progressCallback);
 }
