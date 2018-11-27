@@ -1,6 +1,6 @@
 import { ConcurrentManager } from "./libs/concurrency";
-import { CurseforgeMod, CurseforgeLink } from "./libs/curseforge";
-import { Document, Section, ISection, Table, ITable, IElementCollection } from "./libs/markdown";
+import { Mod, getCurseforgeFileID } from "./libs/curseforge";
+import { Document } from "./libs/markdown";
 import { getModTables, ModTable } from "./libs/mod-table";
 import { packModId, readUri } from "./libs/utils";
 
@@ -18,41 +18,41 @@ async function processTable(modTable: ModTable): Promise<void>
 		{
 			case "curseforge":
 				concurrency.queueThread(async () =>
+				{
+					try
 					{
-						try
+						const mod = (await Mod.fromID(id, versions))!;
+						const newUrls = mod.urls;
+
+						console.error("Processing " + packModId(namespace, id) + "...");
+						for (let j = 0; j < versions.length; j++)
 						{
-							const mod = (await CurseforgeMod.fromID(id, versions, false))!;
-							const newUrls = mod.urls;
+							const version = versions[j];
 
-							console.error("Processing " + packModId(namespace, id) + "...");
-							for (let j = 0; j < versions.length; j++)
+							const previousUrl = modTable.getModUrl(i, version);
+							const nextUrl	  = newUrls[version];
+
+							if (previousUrl != nextUrl)
 							{
-								const version = versions[j];
-
-								const previousUrl = modTable.getModUrl(i, version);
-								const nextUrl	  = newUrls[version];
-
-								if (previousUrl != nextUrl)
+								const previous = previousUrl ? getCurseforgeFileID(previousUrl) : null;
+								const next     = nextUrl     ? getCurseforgeFileID(nextUrl)     : null;
+								if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
 								{
-									const previous = previousUrl ? CurseforgeLink.getFileId(previousUrl) : null;
-									const next     = nextUrl     ? nextUrl.fileId                        : null;
-									if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
-									{
-										console.error(" " + version + ": " + previous + " -> " + next);
-										modTable.setModUrl(i, version, nextUrl!.url);
-									}
-									else
-									{
-										console.error(" !!! " + version + ": " + previous + " -> " + next);
-									}
+									console.error(" " + version + ": " + previous + " -> " + next);
+									modTable.setModUrl(i, version, nextUrl);
+								}
+								else
+								{
+									console.error(" !!! " + version + ": " + previous + " -> " + next);
 								}
 							}
 						}
-						catch(e)
-						{
-							console.error(" !!! " + modName + ": " + e );
-						}
 					}
+					catch(e)
+					{
+						console.error(" !!! " + modName + ": " + e );
+					}
+				}
 				);
 				break;
 			case "url":
