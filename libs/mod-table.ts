@@ -11,51 +11,93 @@ export function getModTables(document: Document): ITable[]
 	return document.getTables().filter(isModTable);
 }
 
-export function getModId(row: ITableRow): [string, string]|null
+export class ModTable
 {
-	for (let x = 0; x < row.getCellCount(); x++)
+	private table: ITable;
+	private versions: { [_: string]: number } = {};
+	
+	public constructor(table: ITable)
 	{
-		const match = row.getCell(x)!.match(/\[[^\]]+\]\(([^)]+)\)/);
-		if (match == null) { continue; }
+		this.table = table;
 
-		const url = match[1];
-
-		const curseforgeMatch = url.match(/https?:\/\/minecraft.curseforge.com\/projects\/([^\/]+)\//);
-		if (curseforgeMatch != null) { return ["curseforge", curseforgeMatch[1]]; }
-
-		return ["url", url];
+		const header = table.getHeader();
+		for (let x = 2; x < header.getCellCount(); x++)
+		{
+			this.versions[header.getCell(x)!.trim()] = x;
+		}
+	}
+	
+	public getTable(): ITable
+	{
+		return this.table;
 	}
 
-	return null;
-}
-
-export function getModName(row: ITableRow): string|null
-{
-	const text = row.getCell(0);
-	return text != null ? text.trim() : null;
-}
-
-export function getModUrls(row: ITableRow): (string|null)[]
-{
-	const urls: (string|null)[] = [];
-	for (let x = 2; x < row.getCellCount(); x++)
+	public getVersions(): string[]
 	{
-		const cell = row.getCell(x)!;
+		return Object.keys(this.versions);
+	}
+
+	public getModCount(): number
+	{
+		return this.table.getRowCount();
+	}
+
+	public getModName(index: number): string|null
+	{
+		const row = this.table.getRow(index);
+		if (row == null) { return null; }
+
+		let name = row.getCell(0)!.trim();
+		while (name.startsWith("+ "))
+		{
+			name = name.substring(2);
+		}
+
+		return name;
+	}
+
+	public getModId(index: number): [string, string]|null
+	{
+		const row = this.table.getRow(index);
+		if (row == null) { return null; }
+		
+		for (let x = 0; x < row.getCellCount(); x++)
+		{
+			const match = row.getCell(x)!.match(/\[[^\]]+\]\(([^)]+)\)/);
+			if (match == null) { continue; }
+
+			const url = match[1];
+
+			const curseforgeMatch = url.match(/https?:\/\/minecraft.curseforge.com\/projects\/([^\/]+)\//);
+			if (curseforgeMatch != null) { return ["curseforge", curseforgeMatch[1]]; }
+		}
+
+		return ["url", this.getModName(index)!];
+	}
+
+	public getModUrl(index: number, version: string): string|null
+	{
+		const column = this.versions[version];
+		if (column == null) { return null; }
+
+		const row = this.table.getRow(index);
+		if (row == null) { return null; }
+		
+		const cell = row.getCell(column)!;
 		const match = cell.match(/\[[^\]]+\]\(([^\)]+)\)/);
-
-		urls.push(match ? match[1] : null);
+		return match ? match[1] : null;
 	}
 
-	return urls;
-}
-
-export function getTableVersions(table: ITable): string[]
-{
-	const versions: string[] = [];
-	const header = table.getHeader();
-	for (let x = 2; x < header.getCellCount(); x++)
+	public setModUrl(index: number, version: string, url: string): boolean
 	{
-		versions.push(header.getCell(x)!.trim());
+		const row = this.table.getRow(index);
+		if (row == null) { return false; }
+		
+		const column = this.versions[version];
+		if (column == null) { return false; }
+
+		row.setCell(column, " [" + version + "](" + url + ")");
+
+		return true;
 	}
-	return versions;
 }
