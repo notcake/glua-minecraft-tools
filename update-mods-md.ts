@@ -1,7 +1,7 @@
 import { ConcurrentManager } from "./libs/concurrency";
 import { getCurseforgeUrls } from "./libs/curseforge-tools";
 import { Document, Section, ISection, Table, ITable, IElementCollection } from "./libs/markdown";
-import { isModTable, getModId, getModName, getModUrls, getTableVersions } from "./libs/mod-table";
+import { isModTable, getModTables, getModId, getModName, getModUrls, getTableVersions } from "./libs/mod-table";
 import { readUri } from "./libs/utils";
 
 async function processTable(table: ITable): Promise<void>
@@ -68,22 +68,6 @@ async function processTable(table: ITable): Promise<void>
 	table.formatWidths();
 }
 
-async function processSection(section: IElementCollection): Promise<void>
-{
-	for (let i = 0; i < section.getCount(); i++)
-	{
-		const element = section.get(i);
-		if (element instanceof Section)
-		{
-			await processSection(element as ISection);
-		}
-		else if (element instanceof Table)
-		{
-			await processTable(element as ITable);
-		}
-	}
-}
-
 async function main(argc: number, argv: string[])
 {
 	if (argc != 3)
@@ -102,7 +86,10 @@ async function main(argc: number, argv: string[])
 
 
 	const document = Document.fromString(data);
-	await processSection(document);
+	for (let table of getModTables(document))
+	{
+		await processTable(table);
+	}
 
 	let markdown = document.toString();
 	if (markdown.endsWith("\n"))
