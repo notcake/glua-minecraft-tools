@@ -92,7 +92,9 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 				continue;
 			}
 
-			enabledMods[packModId(namespace, id)] = true;
+			// I'm not really sure if it's safe to move this from here
+			// but I can't think of any problems that it could cause
+			// enabledMods[packModId(namespace, id)] = true;
 
 			const url = modTable.getModUrl(i, minecraftVersion);
 			if (url == null)
@@ -178,6 +180,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 				{
 					log(progress + "   " + packModId(namespace, id) + " " + existingFileName);
 				}
+				enabledMods[packModId(namespace, itemId)] = true;
 			}
 		}
 	}
