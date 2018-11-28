@@ -40,7 +40,7 @@ export class Mod
 
 	private async *resolveDependencies(version: string): AsyncIterableIterator<Mod>
 	{
-		const body: string = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/relations/dependencies`);
+		const body: string = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/relations/dependencies?filter-related-dependencies=3`);
 		if(!body) throw new Error("Unable to resolve dependencies for " + this.id + ".");
 
 		const urls = body.match(/<a href="https:\/\/minecraft\.curseforge\.com\/projects\/([^"]+)">/g);
@@ -99,7 +99,7 @@ export class Mod
 		this.urls = {};
 		for (let version of versions)
 		{
-			const body = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/files?filter-game-version=${versionMap[version]}?filter-related-dependencies=3`);
+			const body = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/files?filter-game-version=${versionMap[version]}`);
 			const regex = /\/projects\/[^\/]+\/files\/([0-9]+)\/download/;
 			const match = body.match(regex);
 			if (match === null){ continue; }
