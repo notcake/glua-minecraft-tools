@@ -6,7 +6,6 @@ export type ModEntry = {
 	fileName: string;
 	url:      string;
 	version:  string;
-	md5:      string;
 	sha256:   string;
 }
 
@@ -18,9 +17,9 @@ export class ModManifest
 	{
 	}
 	
-	public addMod(namespace: string, id: string, fileName: string, url: string, version: string, md5: string, sha256: string)
+	public addMod(namespace: string, id: string, fileName: string, url: string, version: string, sha256: string)
 	{
-		this.updateMod(namespace, id, fileName, url, version, md5, sha256);
+		this.updateMod(namespace, id, fileName, url, version, sha256);
 	}
 	
 	public containsMod(namespace: string, id: string): boolean
@@ -56,14 +55,13 @@ export class ModManifest
 		delete this.mods[packModId(namespace, id)];
 	}
 	
-	public updateMod(namespace: string, id: string, fileName: string, url: string, version: string, md5: string, sha256: string)
+	public updateMod(namespace: string, id: string, fileName: string, url: string, version: string, sha256: string)
 	{
 		this.mods[packModId(namespace, id)] = {
 			fileName: fileName,
-			url: url,
-			version: version,
-			md5: md5,
-			sha256: sha256
+			url:      url,
+			version:  version,
+			sha256:   sha256
 		};
 	}
 
@@ -102,7 +100,6 @@ export class ModManifest
 				mods[fullId]["fileName"],
 				mods[fullId]["url"],
 				mods[fullId]["version"],
-				mods[fullId]["md5"],
 				mods[fullId]["sha256"]
 			);
 		}
