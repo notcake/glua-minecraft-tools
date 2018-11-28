@@ -1,4 +1,3 @@
-import * as crypto from "crypto";
 import * as fs from "fs";
 import * as request from "request-promise";
 
@@ -8,7 +7,7 @@ import { ITable } from "./markdown";
 import { ModManifest } from "./mod-manifest";
 import { getCurseforgeFileId } from "./curseforge";
 import { getModTables, ModTable } from "./mod-table";
-import { packModId, unpackModId, sanitizeFileName } from "./utils";
+import { sha256, packModId, unpackModId, sanitizeFileName } from "./utils";
 
 export interface IDownloadProgress {
 	percent: number,            // Overall percent (between 0 to 1)
@@ -49,11 +48,6 @@ export async function download(url: string, progressCallback: ((_: IDownloadProg
 			reqState.catch(reject);
 		}
 	);
-}
-
-function hash(hash: string, data: Buffer): string
-{
-	return crypto.createHash(hash).update(data).digest("hex");
 }
 
 export async function downloadMods(modTables: ITable[], minecraftVersion: string, modDirectory: string, manifestPath: string, log: (_: string) => void): Promise<void>
@@ -147,7 +141,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 				fs.writeFileSync(modDirectory + "/" + fileName, data);
 				log(progress + " + " + packModId(namespace, id) + " " + fileName);
 				
-				manifest.updateMod(namespace, id, fileName, downloadUrl, version, hash("sha256", data));
+				manifest.updateMod(namespace, id, fileName, downloadUrl, version, sha256(data));
 				manifest.save(manifestPath);
 			}
 			else
