@@ -1,5 +1,21 @@
+import * as crypto from "crypto";
 import * as fs from "fs";
 import * as request from "request-promise";
+
+export function hash(hash: string, data: Buffer|string): string
+{
+	return crypto.createHash(hash).update(data).digest("hex");
+}
+
+export function md5(data: Buffer|string): string
+{
+	return hash("md5", data);
+}
+
+export function sha256(data: Buffer|string): string
+{
+	return hash("sha256", data);
+}
 
 export function packModId(namespace: string, id: string): string
 {

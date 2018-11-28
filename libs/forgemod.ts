@@ -23,10 +23,33 @@ export async function getLatestForgeVersion(minecraftVersion: string): Promise<s
 
 export function getInstalledForgeVersion(directory: string): string|null
 {
+	const fileName = getInstalledForgeFileName(directory);
+	if (fileName == null) { return null; }
+
+	const match = fileName.match(/forge-(.+?)-universal\.jar/);
+	return match != null ? match[1] : null;
+}
+
+export function getInstalledForgeFileName(directory: string): string|null
+{
 	const files = fs.readdirSync(directory);
 	for (let fileName of files)
 	{
-		const match = fileName.match(/forge-(.+?)-universal\.jar/);
+		const match = fileName.match(/forge-.+?-universal\.jar/);
+		if (match == null) { continue; }
+
+		return match[0];
+	}
+
+	return null;
+}
+
+export function getInstalledMinecraftVersion(directory: string): string|null
+{
+	const files = fs.readdirSync(directory);
+	for (let fileName of files)
+	{
+		const match = fileName.match(/minecraft_server\.(.+?)\.jar/);
 		if (match == null) { continue; }
 
 		return match[1];
