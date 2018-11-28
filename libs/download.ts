@@ -173,7 +173,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 					fs.writeFileSync(modDirectory + "/" + fileName, data);
 					log(progress + " + " + packModId(namespace, id) + " " + fileName);
 
-					manifest.updateMod(namespace, itemId, fileName, itemUrl, itemVersion, hash("md5", data), hash("sha256", data));
+					manifest.updateMod(namespace, itemId, fileName, itemUrl, itemVersion,  hash("sha256", data));
 					manifest.save(manifestPath);
 				}
 				else

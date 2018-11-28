@@ -2,7 +2,7 @@ import { ConcurrentManager } from "./libs/concurrency";
 import { Mod, getCurseforgeFileID } from "./libs/curseforge";
 import { Document } from "./libs/markdown";
 import { getModTables, ModTable } from "./libs/mod-table";
-import { packModId, readUri } from "./libs/utils";
+import { packModId, parseArguments, readUri } from "./libs/utils";
 
 async function processTable(modTable: ModTable): Promise<void>
 {
@@ -71,16 +71,18 @@ async function processTable(modTable: ModTable): Promise<void>
 
 async function main(argc: number, argv: string[])
 {
-	if (argc != 3)
+	const [fixedArguments, mapArguments] = parseArguments(argc, argv);
+	if (fixedArguments.length != 1)
 	{
 		console.error("Usage: ts-node update-mods-md <mods.md file or url> > output.md");
 		process.exit(1);
 	}
 
-	const data = await readUri(process.argv[2]);
+	const markdownUri = fixedArguments[0];
+	const data = await readUri(markdownUri);
 	if (data == null)
 	{
-		console.error("Unable to read from " + process.argv[2] + "!");
+		console.error("Unable to read from " + markdownUri + "!");
 		process.exit(1);
 		return;
 	}

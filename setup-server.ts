@@ -12,10 +12,9 @@ import { parseArguments, readUri, toSet } from "./libs/utils";
 async function main(argc: number, argv: string[])
 {
 	const [fixedArguments, mapArguments] = parseArguments(argc, argv);
-	let argumentsValid = fixedArguments.length == 3;
-	if (!argumentsValid)
+	if (fixedArguments.length != 3)
 	{
-		console.error("Usage: ts-node setup-server.ts <directory> <minecraft-version> <mods-and-players.md> [--forge-version version]");
+		console.error("Usage: ts-node setup-server.ts <server-directory> <minecraft-version> <mods-and-players.md> [--forge-version version]");
 		process.exit(1);
 	}
 
