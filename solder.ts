@@ -244,11 +244,16 @@ async function main(argc: number, argv: string[])
 	
 	const app = express();
 	app.set("json spaces", 4);
-
-	app.get("/api/", (request, response) =>
+	app.use((request, response, next) =>
 		{
 			console.log(request.method + " " + request.url);
 
+			next();
+		}
+	);
+
+	app.get("/api/", (request, response) =>
+		{
 			response.json({
 				api:     "TechnicSolder",
 				version: "v0.7.4.0",
@@ -259,8 +264,6 @@ async function main(argc: number, argv: string[])
 
 	app.get("/api/verify/:apiKey([0-9a-fA-F]+)", (request, response) =>
 		{
-			console.log(request.method + " " + request.url);
-
 			response.json({
 				valid: "Key validated."
 			});
@@ -269,8 +272,6 @@ async function main(argc: number, argv: string[])
 
 	app.get("/api/modpack/", async (request, response) =>
 		{
-			console.log(request.method + " " + request.url);
-
 			if (request.query["include"] == "full")
 			{
 				await modpack.update();
@@ -292,8 +293,6 @@ async function main(argc: number, argv: string[])
 
 	app.get("/api/modpack/" + modpackId + "/", async (request, response) =>
 		{
-			console.log(request.method + " " + request.url);
-
 			await modpack.update();
 
 			response.json(modpack.getInfo());
@@ -302,8 +301,6 @@ async function main(argc: number, argv: string[])
 
 	app.get("/api/modpack/" + modpackId + "/:version([0-9a-fA-F]+)", async (request, response) =>
 		{
-			console.log(request.method + " " + request.url);
-
 			await modpack.update();
 
 			const version = request.params["version"];
@@ -327,8 +324,6 @@ async function main(argc: number, argv: string[])
 
 	app.get("/download/:sha256([0-9a-fA-F]+).zip", (request, response) =>
 		{
-			console.log(request.method + " " + request.url);
-
 			const sha256 = request.params["sha256"];
 			if (modpack.getBlob(sha256) == null)
 			{
@@ -338,14 +333,6 @@ async function main(argc: number, argv: string[])
 			}
 
 			response.end(modpack.getBlob(sha256));
-		}
-	);
-
-	app.get("*", (request, response) =>
-		{
-			console.log(request.method + " " + request.url);
-			response.status(404);
-			response.end();
 		}
 	);
 
