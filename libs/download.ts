@@ -5,7 +5,7 @@ const requestProgress = require("request-progress");
 
 import { ITable } from "./markdown";
 import { ModManifest } from "./mod-manifest";
-import { Mod, getCurseforgeFileID } from "./curseforge";
+import { Mod, getCurseforgeFileId } from "./curseforge";
 import { getModTables, ModTable } from "./mod-table";
 import { sha256, packModId, unpackModId, sanitizeFileName } from "./utils";
 
@@ -111,10 +111,10 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 					downloadQueue.push({
 						id: mod.id,
 						url: mod.urls[minecraftVersion] + '/download',
-						version: getCurseforgeFileID(mod.urls[minecraftVersion])!
+						version: getCurseforgeFileId(mod.urls[minecraftVersion])!
 					});
 
-					const dependencies = await mod.getDependencies(minecraftVersion);
+					const dependencies = await mod.getFlattenedDependencies(minecraftVersion);
 					for(const dependency of dependencies)
 					{
 						if(dependency.availableForVersion(minecraftVersion))
@@ -122,7 +122,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 							downloadQueue.push({
 								id: dependency.id,
 								url: dependency.urls[minecraftVersion] + '/download',
-								version: getCurseforgeFileID(dependency.urls[minecraftVersion])!
+								version: getCurseforgeFileId(dependency.urls[minecraftVersion])!
 							});
 						}
 					}

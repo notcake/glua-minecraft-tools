@@ -1,5 +1,5 @@
 import { ConcurrentManager } from "./libs/concurrency";
-import { Mod, getCurseforgeFileID } from "./libs/curseforge";
+import { Mod, getCurseforgeFileId } from "./libs/curseforge";
 import { Document } from "./libs/markdown";
 import { getModTables, ModTable } from "./libs/mod-table";
 import { packModId, parseArguments, readUri } from "./libs/utils";
@@ -34,8 +34,8 @@ async function processTable(modTable: ModTable): Promise<void>
 
 							if (previousUrl != nextUrl)
 							{
-								const previous = previousUrl ? getCurseforgeFileID(previousUrl) : null;
-								const next     = nextUrl     ? getCurseforgeFileID(nextUrl)     : null;
+								const previous = previousUrl ? getCurseforgeFileId(previousUrl) : null;
+								const next     = nextUrl     ? getCurseforgeFileId(nextUrl)     : null;
 								if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
 								{
 									console.error(" " + version + ": " + previous + " -> " + next);
