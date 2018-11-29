@@ -114,8 +114,9 @@ async function main(argc: number, argv: string[])
 		serverPropertiesNeedsSaving = true;
 	}
 	set("allow-flight", "true");
-	set("white-list", "true");
 	set("level-type", "BIOMESOP");
+        set("max-players", "30");
+	set("white-list", "true");
 	if (serverPropertiesNeedsSaving)
 	{
 		serverProperties.save(serverPropertiesPath);
