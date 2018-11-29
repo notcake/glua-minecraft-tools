@@ -2,14 +2,13 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 
-import * as child_process from "child-process-promise";
 import * as https from "https";
 
 const express = require("express");
 
 import { getInstalledForgeFileName, getInstalledMinecraftVersion } from "./libs/forgemod";
 import { ModManifest } from "./libs/mod-manifest";
-import { md5, sha256, parseArguments } from "./libs/utils";
+import { exec, md5, sha256, parseArguments } from "./libs/utils";
 
 export type ModEntry = {
 	name:     string;
@@ -124,7 +123,7 @@ export class Modpack
 				if (this.blobs[sha256] == null)
 				{
 					const zipPath = tempDirectory + "/" + sha256 + ".zip";
-					await this.exec("zip", [zipPath, "mods/" + fileName], { cwd: this.serverDirectory });
+					await exec("zip", [zipPath, "mods/" + fileName], { cwd: this.serverDirectory });
 
 					blobs[sha256] = fs.readFileSync(zipPath);
 					fs.unlinkSync(zipPath);
@@ -149,10 +148,10 @@ export class Modpack
 				fs.mkdirSync(tempDirectory + "/bin");
 				fs.copyFileSync(forgePath, tempDirectory + "/bin/modpack.jar");
 
-				await this.exec("unzip", ["modpack.jar", "version.json"], { cwd: tempDirectory + "/bin" });
+				await exec("unzip", ["modpack.jar", "version.json"], { cwd: tempDirectory + "/bin" });
 
 				const zipPath = tempDirectory + "/forge.zip";
-				await this.exec("zip", ["-r", zipPath, "bin/"], { cwd: tempDirectory });
+				await exec("zip", ["-r", zipPath, "bin/"], { cwd: tempDirectory });
 
 				fs.unlinkSync(tempDirectory + "/bin/modpack.jar");
 				fs.unlinkSync(tempDirectory + "/bin/version.json");
@@ -175,11 +174,11 @@ export class Modpack
 			// Config
 			if (fs.existsSync(this.serverDirectory + "/config"))
 			{
-				await this.exec("cp", ["-r", this.serverDirectory + "/config", tempDirectory + "/config"]);
-				await this.exec("rm", ["-rf", tempDirectory + "/config/shadowfacts/DiscordChat"]);
+				await exec("cp", ["-r", this.serverDirectory + "/config", tempDirectory + "/config"]);
+				await exec("rm", ["-rf", tempDirectory + "/config/shadowfacts/DiscordChat"]);
 				const zipPath = tempDirectory + "/config.zip";
-				await this.exec("zip", ["-r", zipPath, "config"], { cwd: tempDirectory });
-				await this.exec("rm", ["-rf", tempDirectory + "/config"]);
+				await exec("zip", ["-r", zipPath, "config"], { cwd: tempDirectory });
+				await exec("rm", ["-rf", tempDirectory + "/config"]);
 
 				const blob = fs.readFileSync(zipPath);
 				fs.unlinkSync(zipPath);
@@ -206,14 +205,6 @@ export class Modpack
 			fs.rmdirSync(tempDirectory);
 		}
 		console.log("Update complete.");
-	}
-
-	private async exec(command: string, argv: string[], options: { [_: string]: any } = {}): Promise<void>
-	{
-		const p = child_process.execFile(command, argv, options);
-		p.childProcess.stdout.on("data", x => process.stdout.write(x));
-		p.childProcess.stderr.on("data", x => process.stderr.write(x));
-		await p;
 	}
 }
 

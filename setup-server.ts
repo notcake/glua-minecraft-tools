@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 
 import { Document } from "./libs/markdown";
@@ -7,20 +8,22 @@ import { isForgeInstalled, installForge, getInstalledForgeVersion } from "./libs
 import { getModTables } from "./libs/mod-table";
 import { WhitelistTable } from "./libs/whitelist-table";
 import { ServerProperties, Whitelist } from "./libs/minecraft";
-import { parseArguments, readUri, toSet } from "./libs/utils";
+import { exec, parseArguments, readUri, toSet } from "./libs/utils";
 
 async function main(argc: number, argv: string[])
 {
 	const [fixedArguments, mapArguments] = parseArguments(argc, argv);
-	if (fixedArguments.length != 3)
+	if (fixedArguments.length != 3 ||
+	    mapArguments["config"] == null)
 	{
-		console.error("Usage: ts-node setup-server.ts <server-directory> <minecraft-version> <mods-and-players.md> [--forge-version version]");
+		console.error("Usage: ts-node setup-server.ts <server-directory> <minecraft-version> <mods-and-players.md> --config <config-directory or git url> [--forge-version version]");
 		process.exit(1);
 	}
 
 	const serverDirectory  = fixedArguments[0];
 	const minecraftVersion = fixedArguments[1];
 	const markdownUri      = fixedArguments[2];
+	const configDirectory  = mapArguments["config"];
 	let forgeVersion: string|null = mapArguments["forge-version"];
 
 	const markdownData = await readUri(markdownUri);
@@ -122,7 +125,28 @@ async function main(argc: number, argv: string[])
 	// mods
 	await downloadMods(getModTables(document), minecraftVersion, serverDirectory + "/mods", serverDirectory + "/glua-minecraft-tools-manifest.json", x => console.log("Mods: " + x));
 
-	const setup = "ts-node setup-server.ts \"" + path.resolve(serverDirectory) + "\" " + minecraftVersion + " \"" + markdownUri + "\" --forge-version " + forgeVersion;
+	// config
+	if (configDirectory.indexOf("://") != -1)
+	{
+		const tempDirectory = fs.mkdtempSync(os.tmpdir() + "/glua_minecraft_");
+		try
+		{
+			await exec("git", ["clone", configDirectory, "config"], { cwd: tempDirectory, env: { GIT_TERMINAL_PROMPT: 0 } });
+			await exec("rsync", ["-v", "-r", "--exclude=.*", tempDirectory + "/config/", serverDirectory + "/config/"]);
+			await exec("rm", ["-rf", "config"], { cwd: tempDirectory });
+			console.log("Config: Wrote config.");
+		}
+		finally
+		{
+			fs.rmdirSync(tempDirectory);
+		}
+	}
+	else
+	{
+		await exec("rsync", ["-v", "-r", "--exclude=.*", configDirectory + "/", serverDirectory + "/config/"]);
+	}
+
+	const setup = "ts-node setup-server.ts \"" + path.resolve(serverDirectory) + "\" " + minecraftVersion + " \"" + markdownUri + "\" --config \"" + configDirectory + "\" --forge-version " + forgeVersion;
 	console.log("");
 	console.log("To repeat this install, run");
 	console.log("    " + setup);
@@ -130,4 +154,3 @@ async function main(argc: number, argv: string[])
 }
 
 main(process.argv.length, process.argv);
-

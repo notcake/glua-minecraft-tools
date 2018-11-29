@@ -2,6 +2,16 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as request from "request-promise";
 
+import * as child_process from "child-process-promise";
+
+export async function exec(command: string, argv: string[], options: { [_: string]: any } = {}): Promise<void>
+{
+	const p = child_process.execFile(command, argv, options);
+	p.childProcess.stdout.on("data", x => process.stdout.write(x));
+	p.childProcess.stderr.on("data", x => process.stderr.write(x));
+	await p;
+}
+
 export function hash(hash: string, data: Buffer|string): string
 {
 	return crypto.createHash(hash).update(data).digest("hex");

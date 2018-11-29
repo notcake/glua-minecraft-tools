@@ -1,10 +1,9 @@
 import * as fs from "fs";
-import * as child_process from "child-process-promise";
 
 import * as request from "request-promise";
 
 import { download } from "./download";
-import { sanitizeFileName } from "./utils";
+import { exec, sanitizeFileName } from "./utils";
 
 export function isForgeInstalled(directory: string, minecraftVersion: string): boolean
 {
@@ -83,11 +82,7 @@ export async function installForge(directory: string, minecraftVersion: string, 
 	fs.writeFileSync(directory + "/" + fileName, installerJar);
 	
 	log("Running " + fileName + "...");
-	const installer = child_process.execFile("java", ["-jar", fileName, "--installServer"], { cwd: directory });
-	installer.childProcess.stdout.on("data", x => process.stdout.write(x));
-	installer.childProcess.stderr.on("data", x => process.stderr.write(x));
-
-	await installer;
+	await exec("java", ["-jar", fileName, "--installServer"], { cwd: directory });
 
 	if (!fs.existsSync(directory + "/start.sh"))
 	{
