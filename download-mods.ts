@@ -6,14 +6,13 @@ import { parseArguments, readUri } from "./libs/utils";
 async function main(argc: number, argv: string[])
 {
 	const [fixedArguments] = parseArguments(argc, argv);
-	let argumentsValid = fixedArguments.length == 3;
-	if (!argumentsValid)
+	if (fixedArguments.length != 3)
 	{
 		console.error("Usage: ts-node download-mods.ts <directory> <minecraft-version> <mods.md>");
 		process.exit(1);
 	}
 
-	const serverDirectory  = fixedArguments[0];
+	const modsDirectory  = fixedArguments[0];
 	const minecraftVersion = fixedArguments[1];
 	const markdownUri      = fixedArguments[2];
 	const markdownData = await readUri(markdownUri);
@@ -27,8 +26,8 @@ async function main(argc: number, argv: string[])
 	await downloadMods(
 		getModTables(Document.fromString(markdownData)),
 		minecraftVersion,
-		serverDirectory,
-		serverDirectory + "/glua-minecraft-tools-manifest.json",
+		modsDirectory,
+		modsDirectory + "/glua-minecraft-tools-manifest.json",
 		console.log
 	);
 }
