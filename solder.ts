@@ -95,6 +95,7 @@ export class Modpack
 		}
 
 		await this.updateTask;
+		this.updateTask = null;
 	}
 
 	private async _update(): Promise<void>
