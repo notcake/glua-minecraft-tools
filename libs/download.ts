@@ -23,8 +23,8 @@ export interface IDownloadProgress {
 }
 
 interface IDownloadQueueItem {
-	id: string,
-	url: string,
+	id:      string,
+	url:     string,
 	version: string
 }
 
