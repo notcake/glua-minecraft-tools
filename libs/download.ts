@@ -86,10 +86,6 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 				continue;
 			}
 
-			// I'm not really sure if it's safe to move this from here
-			// but I can't think of any problems that it could cause
-			// enabledMods[packModId(namespace, id)] = true;
-
 			const url = modTable.getModUrl(i, minecraftVersion);
 			if (url == null)
 			{
@@ -101,12 +97,9 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 			switch (namespace)
 			{
 				case "curseforge":
-					const mod = (await Mod.fromID(id, [minecraftVersion]))!;
-					if(!mod.availableForVersion(minecraftVersion))
-					{
-						log(progress + " ! " + packModId(namespace, id) + ": No download URL for Minecraft " + minecraftVersion + " found!");
-						break;
-					}
+					const mod = await Mod.fromID(id, {
+						[minecraftVersion]: url
+					});
 
 					downloadQueue.push({
 						id: mod.id,
@@ -117,7 +110,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 					const dependencies = await mod.getFlattenedDependencies(minecraftVersion);
 					for(const dependency of dependencies)
 					{
-						if(dependency.availableForVersion(minecraftVersion))
+						if(dependency.isAvailableForVersion(minecraftVersion))
 						{
 							downloadQueue.push({
 								id: dependency.id,

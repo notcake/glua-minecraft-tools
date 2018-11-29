@@ -21,8 +21,8 @@ async function processTable(modTable: ModTable): Promise<void>
 				{
 					try
 					{
-						const mod = (await Mod.fromID(id, versions))!;
-						const newUrls = mod.urls;
+						const mod = await Mod.fromID(id);
+						const newUrls = mod.getCurseforgeUrls(versions);
 
 						console.error("Processing " + packModId(namespace, id) + "...");
 						for (let j = 0; j < versions.length; j++)

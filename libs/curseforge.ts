@@ -31,7 +31,12 @@ export class Mod
 	public id: string;
 	public urls: { [_: string]: string };
 
-	public availableForVersion(version: string)
+	public constructor(urls: { [_: string]: string })
+	{
+		this.urls = urls;
+	}
+
+	public isAvailableForVersion(version: string)
 	{
 		return !!this.urls[version];
 	}
@@ -39,22 +44,27 @@ export class Mod
 	private dependencies: { [_: string]: Mod[] } = {};
 	public async getDependencies(version: string): Promise<Mod[]>
 	{
-		if(this.dependencies[version] === undefined)
+		if (this.dependencies[version] === undefined)
 		{
 			const body: string = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/relations/dependencies?filter-related-dependencies=3`);
-			if(!body) { throw new Error(`Unable to resolve dependencies for ${this.id}.`); }
+			if (!body) { throw new Error(`Unable to resolve dependencies for ${this.id}.`); }
 
+			// set this at the start so that circular dependencies don't cause a loop
+			// (not sure if someone can set their own mod as a dependency of itself
+			// but there shouldn't be any harm in doing this)
 			this.dependencies[version] = [];
 			const urls = body.match(/<a href="https:\/\/minecraft\.curseforge\.com\/projects\/([^"]+)">/g);
-			if(!urls) { return []; } // No dependencies
+			if (!urls) { return []; } // No dependencies
 
 			const ids: string[] = urls.map(url => url.match(/\/projects\/([^"]+)">$/)![1]);
-			for(let id of ids)
+			for (const id of ids)
 			{
-				let dep: Mod|null = await Mod.fromID(id, [version]);
-				// null is returned when there are circular dependencies
-				if(dep !== null && dep.availableForVersion(version))
+				// Retrieve the URL for the version that we're gathering dependencies for
+				const dep: Mod = await Mod.fromID(id);
+				const newUrl = await dep.getCurseforgeUrlForVersion(version);
+				if (newUrl !== null)
 				{
+					dep.urls[version] = newUrl;
 					this.dependencies[version].push(dep);
 				}
 			}
@@ -66,12 +76,14 @@ export class Mod
 	private flattenedDependencies: { [_: string]: Mod[] } = {};
 	public async getFlattenedDependencies(version: string): Promise<Mod[]>
 	{
-		if(this.flattenedDependencies[version] === undefined)
+		if (this.flattenedDependencies[version] === undefined)
 		{
+			// set it to an empty array at the start so that
+			// circular dependencies don't cause an infinite loop
 			this.flattenedDependencies[version] = [];
-			if(this.availableForVersion(version))
+			if (this.isAvailableForVersion(version))
 			{
-				for(let dependency of await this.getDependencies(version))
+				for (let dependency of await this.getDependencies(version))
 				{
 					this.flattenedDependencies[version].push(dependency);
 					let dependencies: Mod[] = await dependency.getFlattenedDependencies(version);
@@ -83,30 +95,35 @@ export class Mod
 		return this.flattenedDependencies[version];
 	}
 
+	public async getCurseforgeUrlForVersion(version: string): Promise<string|null>
+	{
+		const body = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/files?filter-game-version=${versionMap[version]}`);
+		const regex = /\/projects\/[^\/]+\/files\/([0-9]+)\/download/;
+		const match = body.match(regex);
+		if (match === null) { return null; }
+		return `https://minecraft.curseforge.com/projects/${this.id}/files/${match[1]}`;
+	}
 
-	private async initialize(id: string, versions: string[]): Promise<void>
+	public async getCurseforgeUrls(versions: string[]): Promise<{ [_: string]: string }>
+	{
+		const urls: { [_: string]: string } = {};
+		for (const version in versions)
+		{
+			const url = await this.getCurseforgeUrlForVersion(version);
+			if (url !== null) { urls[version] = url; }
+		}
+		return urls;
+	}
+
+	private async initialize(id: string): Promise<void>
 	{
 		// Follow redirect
-		const body = await request.get("https://minecraft.curseforge.com/projects/" + id);
-		if(!body)
-		{
-			throw new Error("Invalid curseforge mod id: " + id + "!");
-		}
+		const body = await request.get(`https://minecraft.curseforge.com/projects/${id}`);
+		if (!body) { throw new Error(`Invalid curseforge mod id: ${id}!`); }
 		const regex = /<meta property="og:url" content="https:\/\/minecraft.curseforge.com\/projects\/([^"]+)" \/>/;
 		const match = body.match(regex);
 		if (match != null) { id = match[1]; }
 		this.id = id;
-
-		// Resolve all urls
-		this.urls = {};
-		for (let version of versions)
-		{
-			const body = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/files?filter-game-version=${versionMap[version]}`);
-			const regex = /\/projects\/[^\/]+\/files\/([0-9]+)\/download/;
-			const match = body.match(regex);
-			if (match === null){ continue; }
-			this.urls[version] = `https://minecraft.curseforge.com/projects/${this.id}/files/${match[1]}`;
-		}
 	}
 
 	private static readonly ModLUT: { [_: string]: Mod } = {};
