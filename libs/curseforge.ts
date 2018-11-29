@@ -36,49 +36,53 @@ export class Mod
 		return !!this.urls[version];
 	}
 
-	private async *resolveDependencies(version: string): AsyncIterableIterator<Mod>
-	{
-		const body: string = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/relations/dependencies?filter-related-dependencies=3`);
-		if(!body) throw new Error("Unable to resolve dependencies for " + this.id + ".");
-
-		const urls = body.match(/<a href="https:\/\/minecraft\.curseforge\.com\/projects\/([^"]+)">/g);
-		if(!urls){return;} // No dependencies
-
-		const ids: string[] = urls
-			.map(url => url.match(/<a href="https:\/\/minecraft\.curseforge\.com\/projects\/([^"]+)">/)![1]);
-		for(let id of ids)
-		{
-			let dep: Mod|null = await Mod.fromID(id, [version]);
-			// circular dependencies (I'm looking at you Tesla Core Lib)
-			if(dep !== null)
-			{
-				if(dep.availableForVersion(version))
-				{
-					yield dep;
-				}
-			}
-		}
-	}
-
 	private dependencies: { [_: string]: Mod[] } = {};
 	public async getDependencies(version: string): Promise<Mod[]>
 	{
 		if(this.dependencies[version] === undefined)
 		{
+			const body: string = await request.get(`https://minecraft.curseforge.com/projects/${this.id}/relations/dependencies?filter-related-dependencies=3`);
+			if(!body) { throw new Error(`Unable to resolve dependencies for ${this.id}.`); }
+
 			this.dependencies[version] = [];
-			if(this.availableForVersion(version))
+			const urls = body.match(/<a href="https:\/\/minecraft\.curseforge\.com\/projects\/([^"]+)">/g);
+			if(!urls) { return []; } // No dependencies
+
+			const ids: string[] = urls.map(url => url.match(/\/projects\/([^"]+)">$/)![1]);
+			for(let id of ids)
 			{
-				for await(let dependency of this.resolveDependencies(version))
+				let dep: Mod|null = await Mod.fromID(id, [version]);
+				// null is returned when there are circular dependencies
+				if(dep !== null && dep.availableForVersion(version))
 				{
-					this.dependencies[version].push(dependency);
-					let dependencies: Mod[] = await dependency.getDependencies(version);
-					this.dependencies[version].push(...dependencies);
+					this.dependencies[version].push(dep);
 				}
 			}
 		}
 
 		return this.dependencies[version];
 	}
+
+	private flattenedDependencies: { [_: string]: Mod[] } = {};
+	public async getFlattenedDependencies(version: string): Promise<Mod[]>
+	{
+		if(this.flattenedDependencies[version] === undefined)
+		{
+			this.flattenedDependencies[version] = [];
+			if(this.availableForVersion(version))
+			{
+				for(let dependency of await this.getDependencies(version))
+				{
+					this.flattenedDependencies[version].push(dependency);
+					let dependencies: Mod[] = await dependency.getFlattenedDependencies(version);
+					this.flattenedDependencies[version].push(...dependencies);
+				}
+			}
+		}
+
+		return this.flattenedDependencies[version];
+	}
+
 
 	private async initialize(id: string, versions: string[]): Promise<void>
 	{
