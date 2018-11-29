@@ -109,21 +109,18 @@ export class Mod
 		}
 	}
 
-	private static readonly ModLUT: { [_: string]: Mod|null } = {};
-	public static async fromID(id: string, versions: string[]) : Promise<Mod|null>
+	private static readonly ModLUT: { [_: string]: Mod } = {};
+	public static async fromID(id: string, existingUrls: { [_: string]: string } = {}) : Promise<Mod>
 	{
-		if(this.ModLUT[id] === undefined)
+		if (this.ModLUT[id] === undefined)
 		{
-			// circular dependencies (I'm looking at you Tesla Core Lib)
-			this.ModLUT[id] = null;
-			let mod = this.ModLUT[id] = new Mod();
+			let mod = this.ModLUT[id] = new Mod(existingUrls);
 			// also add with the mod's final ID in case we were redirected somewhere else
 			this.ModLUT[mod.id] = mod;
 
-			await mod.initialize(id, versions);
+			await mod.initialize(id);
 		}
-		else if(this.ModLUT[id] === null)
-			return null;
+
 		return this.ModLUT[id];
 	}
 }
