@@ -55,7 +55,7 @@ export class Modpack
 			icon_md5:       null,
 			logo:           null,
 			logo_md5:       null,
-			background:     null,
+			background:     "https://i.imgur.com/Qg9LfeK.png",
 			background_md5: null,
 			recommended:    this.version,
 			latest:         this.version,
