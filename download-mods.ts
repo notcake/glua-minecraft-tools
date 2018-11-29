@@ -24,7 +24,13 @@ async function main(argc: number, argv: string[])
 		return;
 	}
 
-	await downloadMods(getModTables(Document.fromString(markdownData)), minecraftVersion, serverDirectory, serverDirectory + "/glua-minecraft-tools-manifest.json", console.log);
+	await downloadMods(
+		getModTables(Document.fromString(markdownData)),
+		minecraftVersion,
+		serverDirectory,
+		serverDirectory + "/glua-minecraft-tools-manifest.json",
+		console.log
+	);
 }
 
 main(process.argv.length, process.argv);
