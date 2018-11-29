@@ -2,10 +2,8 @@
 // a common file containing the API to interact with the curseforge site
 import * as request from "request-promise";
 const fakeUserAgent = require("fake-useragent");
-type StringMap<V> = {[_: string]: V};
 
-
-const versionMap : StringMap<string> = {
+const versionMap : { [_: string]: string } = {
 	"1.7":	  "1738749986%3A5",
 	"1.7.10": "2020709689%3A4449",
 	"1.10":   "1738749986%3A572",
@@ -31,7 +29,7 @@ export function getCurseforgeFileID(url: string): string|null
 export class Mod
 {
 	public id: string;
-	public urls: StringMap<string>;
+	public urls: { [_: string]: string };
 
 	public availableForVersion(version: string)
 	{
@@ -62,7 +60,7 @@ export class Mod
 		}
 	}
 
-	private dependencies: StringMap<Mod[]> = {};
+	private dependencies: { [_: string]: Mod[] } = {};
 	public async getDependencies(version: string): Promise<Mod[]>
 	{
 		if(this.dependencies[version] === undefined)
@@ -107,7 +105,7 @@ export class Mod
 		}
 	}
 
-	private static readonly ModLUT: StringMap<Mod|null> = {};
+	private static readonly ModLUT: { [_: string]: Mod|null } = {};
 	public static async fromID(id: string, versions: string[]) : Promise<Mod|null>
 	{
 		if(this.ModLUT[id] === undefined)
