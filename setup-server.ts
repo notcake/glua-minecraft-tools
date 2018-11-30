@@ -129,17 +129,16 @@ async function main(argc: number, argv: string[])
 	// config
 	if (configDirectory.indexOf("://") != -1)
 	{
-		const tempDirectory = fs.mkdtempSync(os.tmpdir() + "/glua_minecraft_");
+		const tempDirectory = fs.mkdtempSync(os.tmpdir() + "/glua-minecraft-config_");
 		try
 		{
-			await exec("git", ["clone", configDirectory, "config"], { cwd: tempDirectory, env: { GIT_TERMINAL_PROMPT: 0 } });
-			await exec("rsync", ["-v", "-r", "--exclude=.*", tempDirectory + "/config/", serverDirectory + "/config/"]);
-			await exec("rm", ["-rf", "config"], { cwd: tempDirectory });
+			await exec("git", ["clone", configDirectory, tempDirectory], { env: { GIT_TERMINAL_PROMPT: 0 } });
+			await exec("rsync", ["-v", "-r", "--exclude=.*", tempDirectory + "/", serverDirectory + "/"]);
 			console.log("Config: Wrote config.");
 		}
 		finally
 		{
-			fs.rmdirSync(tempDirectory);
+			await exec("rm", ["-rf", tempDirectory]);
 		}
 	}
 	else
