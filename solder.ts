@@ -86,8 +86,9 @@ export class Modpack
 	private updateTask: Promise<void>|null = null;
 	public async update(): Promise<void>
 	{
-		const manifestInfo = fs.statSync(this.manifestPath)
-		if (manifestInfo.mtime == this.manifestTimestamp) { return; }
+		const manifestInfo = fs.statSync(this.manifestPath);
+		if (this.manifestTimestamp != null &&
+		    manifestInfo.mtime.getTime() == this.manifestTimestamp.getTime()) { return; }
 
 		if (this.updateTask == null)
 		{
