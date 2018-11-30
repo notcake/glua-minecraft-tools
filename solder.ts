@@ -206,7 +206,7 @@ export class Modpack
 		{
 			fs.rmdirSync(tempDirectory);
 		}
-		console.log("Update complete.");
+		console.log("Updated to version " + this.version + ".");
 	}
 }
 
