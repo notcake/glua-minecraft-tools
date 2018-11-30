@@ -213,11 +213,9 @@ export class Modpack
 async function main(argc: number, argv: string[])
 {
 	const [fixedArguments, mapArguments] = parseArguments(argc, argv);
-	if (fixedArguments.length != 4 ||
-	    mapArguments["key"]  == null ||
-	    mapArguments["cert"] == null)
+	if (fixedArguments.length != 4)
 	{
-		console.error("Usage: ts-node solder.ts <modpack-id> <modpack-name> <base-url> <server-directory> --port <port> --key <host.key> --cert <host.crt>");
+		console.error("Usage: ts-node solder.ts <modpack-id> <modpack-name> <base-url> <server-directory> --port <port> [--key <host.key> --cert <host.crt>]");
 		process.exit(1);
 	}
 
