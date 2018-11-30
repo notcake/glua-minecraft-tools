@@ -163,6 +163,7 @@ export class Modpack
 				fs.unlinkSync(zipPath);
 				const forgeSHA256 = sha256(blob);
 
+				versionHash.update(forgeSHA256);
 				blobs[forgeSHA256] = blob;
 				mods.push({
 					name:     "_forge",
@@ -190,6 +191,7 @@ export class Modpack
 				fs.unlinkSync(zipPath);
 				const configSHA256 = sha256(blob);
 
+				versionHash.update(configSHA256);
 				blobs[configSHA256] = blob;
 				mods.push({
 					name:     "_config",
