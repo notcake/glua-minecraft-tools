@@ -231,8 +231,6 @@ async function main(argc: number, argv: string[])
 		baseUrl += "/";
 	}
 
-	const port = mapArguments["port"] || 80;
-	
 	const modpack = new Modpack(modpackId, modpackName, baseUrl, serverDirectory);
 	
 	const app = express();
@@ -331,12 +329,24 @@ async function main(argc: number, argv: string[])
 
 	await modpack.update();
 
-	console.log("Listening on port " + port.toString() + "...");
-	const httpsOptions = {
-		key:  fs.readFileSync(mapArguments["key"]),
-		cert: fs.readFileSync(mapArguments["cert"])
-	};
-	https.createServer(httpsOptions, app).listen(port);
+	if (mapArguments["key"] != null &&
+	    mapArguments["cert"] != null)
+	{
+		const port = mapArguments["port"] || 443;
+
+		const httpsOptions = {
+			key:  fs.readFileSync(mapArguments["key"]),
+			cert: fs.readFileSync(mapArguments["cert"])
+		};
+		https.createServer(httpsOptions, app).listen(port);
+		console.log("Listening on port " + port.toString() + " (https) ...");
+	}
+	else
+	{
+		const port = mapArguments["port"] || 80;
+		app.listen(port);
+		console.log("Listening on port " + port.toString() + " (http) ...");
+	}
 }
 
 main(process.argv.length, process.argv);
