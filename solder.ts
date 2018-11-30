@@ -180,6 +180,10 @@ export class Modpack
 				await exec("rm", ["-rf", tempDirectory + "/config/shadowfacts/DiscordChat"]);
 				const zipPath = tempDirectory + "/config.zip";
 				await exec("zip", ["-r", zipPath, "config"], { cwd: tempDirectory });
+				if (fs.existsSync(this.serverDirectory + "/servers.dat"))
+				{
+					await exec("zip", [zipPath, "servers.dat"], { cwd: this.serverDirectory });
+				}
 				await exec("rm", ["-rf", tempDirectory + "/config"]);
 
 				const blob = fs.readFileSync(zipPath);
