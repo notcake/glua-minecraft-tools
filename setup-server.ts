@@ -113,10 +113,15 @@ async function main(argc: number, argv: string[])
 		console.log("Properties: Setting " + key + " to " + value);
 		serverPropertiesNeedsSaving = true;
 	}
+	set("max-tick-time", "120000");
 	set("allow-flight", "true");
 	set("level-type", "BIOMESOP");
         set("max-players", "30");
 	set("white-list", "true");
+
+	// disable spawn protection
+	set("spawn-protection", "0");
+
 	if (serverPropertiesNeedsSaving)
 	{
 		serverProperties.save(serverPropertiesPath);
