@@ -1,3 +1,4 @@
+import * as crypto from "crypto";
 import * as fs from "fs";
 
 import * as request from "request-promise";
@@ -84,17 +85,49 @@ export async function installForge(directory: string, minecraftVersion: string, 
 	log("Running " + fileName + "...");
 	await exec("java", ["-jar", fileName, "--installServer"], { cwd: directory });
 
+	return forgeVersion;
+}
+
+export async function installLauncher(directory: string, log: (_: string) => void): Promise<void>
+{
+	if (!fs.existsSync(directory + "/jmxremote.password"))
+	{
+		fs.writeFileSync(directory + "/jmxremote.password",
+			"monitorRole " + crypto.randomBytes(16).toString("hex") + "\n" +
+			"controlRole " + crypto.randomBytes(16).toString("hex") + "\n");
+		fs.chmodSync(directory + "/jmxremote.password", 0o400);
+
+		log("Wrote " + directory + "/jmxremote.password");
+	}
+
 	if (!fs.existsSync(directory + "/start.sh"))
 	{
+		// Memory
+		let javaArguments = "-Xmx28672M -Xms28672M";
+
+		// JMX monitoring
+		javaArguments += " -Dcom.sun.management.jmxremote";
+		javaArguments += " -Dcom.sun.management.jmxremote.ssl=false";
+		javaArguments += " -Dcom.sun.management.jmxremote.authenticate=true";
+		javaArguments += " -Dcom.sun.management.jmxremote.port=9010";
+		javaArguments += " -Dcom.sun.management.jmxremote.rmi.port=9010";
+		javaArguments += " -Dcom.sun.management.jmxremote.password.file=${curdir}/jmxremote.password";
+		javaArguments += " -Dcom.sun.management.jmxremote.access.file=${curdir}/jmxremote.access";
+
+		// GC
+		javaArguments += " -XX:ParallelGCThreads=8 -XX:InitiatingHeapOccupancyPercent=10 -XX:AllocatePrefetchStyle=1 -XX:+UseSuperWord -XX:+OptimizeFill -XX:LoopUnrollMin=4 -XX:LoopMaxUnroll=16 -XX:+UseLoopPredicate -XX:+RangeCheckElimination -XX:+CMSCleanOnEnter -XX:+EliminateLocks -XX:+DoEscapeAnalysis -XX:+TieredCompilation -XX:+UseCodeCacheFlushing -XX:+UseFastJNIAccessors -XX:+CMSScavengeBeforeRemark -XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses -XX:+ScavengeBeforeFullGC -XX:+AlwaysPreTouch -XX:+UseFastAccessorMethods -XX:+UnlockExperimentalVMOptions -XX:G1HeapWastePercent=10 -XX:G1MaxNewSizePercent=10 -XX:G1HeapRegionSize=32M -XX:G1NewSizePercent=10 -XX:MaxGCPauseMillis=100 -XX:+OptimizeStringConcat -XX:+UseParNewGC -XX:+UseNUMA -XX:+UseCompressedOops -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=2 -XX:+DisableExplicitGC";
+		let minecraftArguments = "-Dfml.readTimeout=120";
+
 		fs.writeFileSync(directory + "/start.sh",
 			"#!/bin/bash\n" +
 			"curdir=\"${0%/*}\"\n" +
+			"jar=\"${curdir}/`ls ${curdir} | grep universal.jar`\"\n" +
 			"\n" +
-			"java -Xmx28672M -Xms28672M -jar \"${curdir}/`ls ${curdir} | grep universal.jar`\"\n"
+			"java " + javaArguments + " -jar \"${jar}\" " + minecraftArguments + "\n"
 		);
 		fs.chmodSync(directory + "/start.sh", 0o744);
-	}
 
-	return forgeVersion;
+		log("Wrote " + directory + "/start.sh");
+	}
 }
 

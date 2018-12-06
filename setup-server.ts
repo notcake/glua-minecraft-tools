@@ -4,7 +4,7 @@ import * as path from "path";
 
 import { Document } from "./libs/markdown";
 import { downloadMods } from "./libs/download";
-import { isForgeInstalled, installForge, getInstalledForgeVersion } from "./libs/forgemod";
+import { isForgeInstalled, installForge, installLauncher, getInstalledForgeVersion } from "./libs/forgemod";
 import { getModTables } from "./libs/mod-table";
 import { WhitelistTable } from "./libs/whitelist-table";
 import { ServerProperties, Whitelist } from "./libs/minecraft";
@@ -48,6 +48,9 @@ async function main(argc: number, argv: string[])
 		console.log("Forge: Already installed at " + serverDirectory + ".");
 		forgeVersion = getInstalledForgeVersion(serverDirectory);
 	}
+
+	// launcher
+	await installLauncher(serverDirectory, x => console.log("Launcher: " + x));
 
 	// eula.txt
 	if (!fs.existsSync(serverDirectory + "/eula.txt") ||
