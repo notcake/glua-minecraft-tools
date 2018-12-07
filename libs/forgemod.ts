@@ -112,7 +112,6 @@ export async function installLauncher(directory: string, log: (_: string) => voi
 		javaArguments += " -Dcom.sun.management.jmxremote.port=9010";
 		javaArguments += " -Dcom.sun.management.jmxremote.rmi.port=9010";
 		javaArguments += " -Dcom.sun.management.jmxremote.password.file=${curdir}/jmxremote.password";
-		javaArguments += " -Dcom.sun.management.jmxremote.access.file=${curdir}/jmxremote.access";
 
 		// GC
 		javaArguments += " -XX:ParallelGCThreads=8 -XX:InitiatingHeapOccupancyPercent=10 -XX:AllocatePrefetchStyle=1 -XX:+UseSuperWord -XX:+OptimizeFill -XX:LoopUnrollMin=4 -XX:LoopMaxUnroll=16 -XX:+UseLoopPredicate -XX:+RangeCheckElimination -XX:+CMSCleanOnEnter -XX:+EliminateLocks -XX:+DoEscapeAnalysis -XX:+TieredCompilation -XX:+UseCodeCacheFlushing -XX:+UseFastJNIAccessors -XX:+CMSScavengeBeforeRemark -XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses -XX:+ScavengeBeforeFullGC -XX:+AlwaysPreTouch -XX:+UseFastAccessorMethods -XX:+UnlockExperimentalVMOptions -XX:G1HeapWastePercent=10 -XX:G1MaxNewSizePercent=10 -XX:G1HeapRegionSize=32M -XX:G1NewSizePercent=10 -XX:MaxGCPauseMillis=100 -XX:+OptimizeStringConcat -XX:+UseParNewGC -XX:+UseNUMA -XX:+UseCompressedOops -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=2 -XX:+DisableExplicitGC";
