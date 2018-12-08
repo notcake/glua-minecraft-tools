@@ -151,7 +151,7 @@ async function main(argc: number, argv: string[])
 	}
 	else
 	{
-		await exec("rsync", ["-v", "-r", "--exclude=.*", configDirectory + "/", serverDirectory + "/config/"]);
+		await exec("rsync", ["-v", "-r", "--exclude=.*", configDirectory + "/", serverDirectory + "/"]);
 	}
 
 	const setup = "ts-node setup-server.ts \"" + path.resolve(serverDirectory) + "\" " + minecraftVersion + " \"" + markdownUri + "\" --config \"" + configDirectory + "\" --forge-version " + forgeVersion;
