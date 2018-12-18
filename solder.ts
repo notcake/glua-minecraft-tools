@@ -150,7 +150,32 @@ export class Modpack
 				fs.mkdirSync(tempDirectory + "/bin");
 				fs.copyFileSync(forgePath, tempDirectory + "/bin/modpack.jar");
 
+				// version.json
 				await exec("unzip", ["modpack.jar", "version.json"], { cwd: tempDirectory + "/bin" });
+				const versionJson = fs.readFileSync(tempDirectory + "/bin/version.json", "utf-8");
+				const versionJsonLines = versionJson.split("\n");
+				let minecraftArgumentsIndex: number = 0;
+				for (let i = 0; i < versionJsonLines.length; i++)
+				{
+					if (versionJsonLines[i].indexOf("minecraftArguments") != -1)
+					{
+						minecraftArgumentsIndex = i;
+						break;
+					}
+				}
+				let javaArguments = "";
+				javaArguments += " -Dcom.sun.management.jmxremote";
+				javaArguments += " -Dcom.sun.management.jmxremote.ssl=false";
+				javaArguments += " -Dcom.sun.management.jmxremote.authenticate=false";
+				javaArguments += " -Dcom.sun.management.jmxremote.local.only=true";
+				javaArguments += " -Dcom.sun.management.jmxremote.port=9010";
+				versionJsonLines.splice(minecraftArgumentsIndex + 1, 0, "\"javaArguments\": \"" + javaArguments + "\"");
+				fs.writeFileSync(tempDirectory + "/bin/version.json", versionJsonLines.join("\n"));
+				await exec("zip", ["modpack.jar", "--delete", "version.json"], { cwd: tempDirectory + "/bin" });
+				await exec("zip", ["modpack.jar", "version.json"], { cwd: tempDirectory + "/bin" });
+
+				// Delete META-INF
+				await exec("zip", ["modpack.jar", "--delete", "META-INF/*"], { cwd: tempDirectory + "/bin" });
 
 				const zipPath = tempDirectory + "/forge.zip";
 				await exec("zip", ["-r", zipPath, "bin/"], { cwd: tempDirectory });
