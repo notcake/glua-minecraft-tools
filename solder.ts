@@ -328,7 +328,7 @@ async function main(argc: number, argv: string[])
 			if (version != modpack.getVersion())
 			{
 				response.json({
-					error: "Build does not exist"
+					error: "This build is out of date. Please go to Modpack Options and select the latest (and only) build."
 				});
 				return;
 			}
