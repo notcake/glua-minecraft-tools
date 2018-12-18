@@ -169,6 +169,7 @@ export class Modpack
 				javaArguments += " -Dcom.sun.management.jmxremote.authenticate=false";
 				javaArguments += " -Dcom.sun.management.jmxremote.local.only=true";
 				javaArguments += " -Dcom.sun.management.jmxremote.port=9010";
+				javaArguments += " -Dfml.readTimeout=120";
 				versionJsonLines.splice(minecraftArgumentsIndex + 1, 0, "\"javaArguments\": \"" + javaArguments + "\"");
 				fs.writeFileSync(tempDirectory + "/bin/version.json", versionJsonLines.join("\n"));
 				await exec("zip", ["modpack.jar", "--delete", "version.json"], { cwd: tempDirectory + "/bin" });
