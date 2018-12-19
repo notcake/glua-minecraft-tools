@@ -10,6 +10,28 @@ import { WhitelistTable } from "./libs/whitelist-table";
 import { ServerProperties, Whitelist } from "./libs/minecraft";
 import { exec, parseArguments, readUri, toSet } from "./libs/utils";
 
+async function applyConfig(serverDirectory: string, configDirectory: string): Promise<void>
+{
+	if (configDirectory.indexOf("://") != -1)
+	{
+		const tempDirectory = fs.mkdtempSync(os.tmpdir() + "/glua-minecraft-config_");
+		try
+		{
+			await exec("git", ["clone", configDirectory, tempDirectory], { env: { GIT_TERMINAL_PROMPT: 0 } });
+			await exec("rsync", ["-v", "-r", "--exclude=.*", tempDirectory + "/", serverDirectory + "/"]);
+			console.log("Config: Wrote config.");
+		}
+		finally
+		{
+			await exec("rm", ["-rf", tempDirectory]);
+		}
+	}
+	else
+	{
+		await exec("rsync", ["-v", "-r", "--exclude=.*", configDirectory + "/", serverDirectory + "/"]);
+	}
+}
+
 async function main(argc: number, argv: string[])
 {
 	const [fixedArguments, mapArguments] = parseArguments(argc, argv);
@@ -23,7 +45,8 @@ async function main(argc: number, argv: string[])
 	const serverDirectory  = fixedArguments[0];
 	const minecraftVersion = fixedArguments[1];
 	const markdownUri      = fixedArguments[2];
-	const configDirectory  = mapArguments["config"];
+	const configDirectory1  = mapArguments["config"];
+	const configDirectory2  = mapArguments["config-2"];
 	let forgeVersion: string|null = mapArguments["forge-version"];
 
 	const markdownData = await readUri(markdownUri);
@@ -135,26 +158,18 @@ async function main(argc: number, argv: string[])
 	await downloadMods(getModTables(document), minecraftVersion, serverDirectory + "/mods", serverDirectory + "/glua-minecraft-tools-manifest.json", x => console.log("Mods: " + x));
 
 	// config
-	if (configDirectory.indexOf("://") != -1)
+	await applyConfig(serverDirectory, configDirectory1);
+	if (configDirectory2 != null)
 	{
-		const tempDirectory = fs.mkdtempSync(os.tmpdir() + "/glua-minecraft-config_");
-		try
-		{
-			await exec("git", ["clone", configDirectory, tempDirectory], { env: { GIT_TERMINAL_PROMPT: 0 } });
-			await exec("rsync", ["-v", "-r", "--exclude=.*", tempDirectory + "/", serverDirectory + "/"]);
-			console.log("Config: Wrote config.");
-		}
-		finally
-		{
-			await exec("rm", ["-rf", tempDirectory]);
-		}
-	}
-	else
-	{
-		await exec("rsync", ["-v", "-r", "--exclude=.*", configDirectory + "/", serverDirectory + "/"]);
+		await applyConfig(serverDirectory, configDirectory2);
 	}
 
-	const setup = "ts-node setup-server.ts \"" + path.resolve(serverDirectory) + "\" " + minecraftVersion + " \"" + markdownUri + "\" --config \"" + configDirectory + "\" --forge-version " + forgeVersion;
+	let setup = "ts-node setup-server.ts \"" + path.resolve(serverDirectory) + "\" " + minecraftVersion + " \"" + markdownUri + "\" --config \"" + configDirectory1 + "\"";
+	if (configDirectory2 != null)
+	{
+		setup += " --config-2 \"" + configDirectory2 + "\"";
+	}
+	setup += " --forge-version " + forgeVersion;
 	console.log("");
 	console.log("To repeat this install, run");
 	console.log("    " + setup);
