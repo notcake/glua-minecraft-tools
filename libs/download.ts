@@ -40,10 +40,10 @@ export async function download(url: string, progressCallback: ((_: IDownloadProg
 					// Try content-disposition first
 					let contentDisposition: string = <any> (result.headers["content-disposition"] || result.headers["Content-Disposition"]);
 					if (contentDisposition) {
-						let fileMatch = contentDisposition.match(/filename\*?=[\'\"]([^\'\"]+)/);
+						let fileMatch = contentDisposition.match(/filename\*?=(?:(?:[\'\"]([^\'\"]+))|(?:(\S+)))/);
 						
-						if (fileMatch && fileMatch[1]) {
-							fileName = fileMatch[1] as string;
+						if (fileMatch && (fileMatch[1] || fileMatch[2])) {
+							fileName = (fileMatch[1] || fileMatch[2]) as string;
 						}
 					}
 					
