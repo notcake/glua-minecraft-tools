@@ -35,7 +35,22 @@ export async function download(url: string, progressCallback: ((_: IDownloadProg
 
 					if (result.statusCode !== 200) { reject("Non-200 status code returned"); return; }
 
-					const fileName = result.request.uri.href.split("/").pop() as string;
+					let fileName;
+					
+					// Try content-disposition first
+					if (result.headers["content-disposition"]) {
+						let fileMatch = result.headers["content-disposition"].match(/filename\*?=[\'\"]([^\'\"]+)/);
+						
+						if (fileMatch && fileMatch[1]) {
+							fileName = fileMatch[1] as string;
+						}
+					}
+					
+					// and fallback to last entry in URL
+					if(!fileName) {
+						fileName = result.request.uri.pathname.split("/").pop() as string;
+					}
+					
 					resolve([body, decodeURIComponent(fileName)]);
 				}
 			);
