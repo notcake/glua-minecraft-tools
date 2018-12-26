@@ -204,8 +204,16 @@ export class Modpack
 			if (fs.existsSync(this.serverDirectory + "/config"))
 			{
 				await exec("cp", ["-r", this.serverDirectory + "/config", tempDirectory + "/config"]);
-				await exec("rm", ["-f", tempDirectory + "/config/fmlModState.properties"]);
-				await exec("rm", ["-rf", tempDirectory + "/config/shadowfacts/DiscordChat"]);
+				
+				if (fs.existsSync(tempDirectory + "/config/fmlModState.properties"))
+				{
+					await exec("rm", ["-f", tempDirectory + "/config/fmlModState.properties"]);
+				}
+				
+				if (fs.existsSync(tempDirectory + "/config/shadowfacts/DiscordChat"))
+				{
+					await exec("rm", ["-rf", tempDirectory + "/config/shadowfacts/DiscordChat"]);
+				}
 
 				const zipPath = tempDirectory + "/config.zip";
 				await exec("zip", ["-r", zipPath, "config"], { cwd: tempDirectory });
