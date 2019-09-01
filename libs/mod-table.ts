@@ -68,7 +68,13 @@ export class ModTable
 
 			const url = match[1];
 
-			const curseforgeMatch = url.match(/https?:\/\/minecraft.curseforge.com\/projects\/([^\/]+)\//);
+			const curseforgeMatchOld = url.match(/https?:\/\/minecraft.curseforge.com\/projects\/([^\/]+)\//);
+			if (curseforgeMatchOld != null) { return ["curseforge-legacy", curseforgeMatchOld[1]]; }
+
+			const curseforgeMatchWWW = url.match(/https?:\/\/www.curseforge.com\/minecraft\/mc\-mods\/([^\/]+)\//);
+			if (curseforgeMatchWWW != null) { return ["curseforge", curseforgeMatchWWW[1]]; }
+
+			const curseforgeMatch = url.match(/https?:\/\/curseforge.com\/minecraft\/mc\-mods\/([^\/]+)\//);
 			if (curseforgeMatch != null) { return ["curseforge", curseforgeMatch[1]]; }
 		}
 

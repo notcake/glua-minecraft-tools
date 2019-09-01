@@ -17,6 +17,7 @@ async function processTable(modTable: ModTable): Promise<void>
 		switch (namespace)
 		{
 			case "curseforge":
+			case "curseforge-legacy":
 				concurrency.queueThread(async () =>
 					{
 						const newUrls = await getCurseforgeUrls(id, versions);

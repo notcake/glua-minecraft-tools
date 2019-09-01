@@ -36,7 +36,7 @@ async function getCurseforgeLinkForVersion(id: string, version: string): Promise
 	const regex = /\/minecraft\/mc\-mods\/[^\/]+\/download\/([0-9]+)"\s*class="button button\-\-hollow/;
 	const match = body.match(regex);
 	if (match == null) { return null; }
-	return "https://www.curseforge.com/minecraft/mc-mods/" + id + "/download/" + match[1] + "/file";
+	return "https://www.curseforge.com/minecraft/mc-mods/" + id + "/files/" + match[1]
 }
 
 export async function getCurseforgeUrls(id: string, versions: string[]): Promise<{ [_: string]: string }>
@@ -64,12 +64,6 @@ export async function getCurseforgeUrls(id: string, versions: string[]): Promise
 
 export function getCurseforgeFileId(url: string): string|null
 {
-	if(url.match(/^https?:\/\/minecraft\.curseforge\.com/)) {
-		const match = url.match(/\/([0-9]+)$/);
-		return match != null ? match[1] : null;
-	}
-	else {
-		const match = url.match(/\/([0-9]+)\/file$/);
-		return match != null ? match[1] : null;
-	}
+	const match = url.match(/\/([0-9]+)$/);
+	return match != null ? match[1] : null;
 }

@@ -113,6 +113,10 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 			switch (namespace)
 			{
 				case "curseforge":
+					downloadUrl = url.replace(/\/files\/([0-9]+)\/?/,"/download/$1/file");
+					version = getCurseforgeFileId(url);
+					break;
+				case "curseforge-legacy":
 					downloadUrl = url + "/download";
 					version = getCurseforgeFileId(url);
 					break;
