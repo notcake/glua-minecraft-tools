@@ -83,7 +83,9 @@ export class ModTable
 		const row = this.table.getRow(index);
 		if (row == null) { return null; }
 
-		const cell = row.getCell(column)!;
+		const cell = row.getCell(column);
+		if (cell == null) { return null; }
+
 		const match = cell.match(/\[[^\]]+\]\(([^\)]+)\)/);
 		return match ? match[1] : null;
 	}
