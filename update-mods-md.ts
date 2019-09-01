@@ -40,8 +40,12 @@ async function processTable(modTable: ModTable): Promise<void>
 								}
 								else
 								{
+									modTable.setModUrl(i, version, null);
 									console.error(" !!! " + version + ": " + previous + " -> " + next);
 								}
+							}
+							else if(nextUrl == null) {
+								modTable.setModUrl(i, version, null);
 							}
 						}
 					}

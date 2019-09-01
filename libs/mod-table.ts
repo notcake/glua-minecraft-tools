@@ -98,7 +98,7 @@ export class ModTable
 		return row.getCell(1)!.indexOf("✔") != -1;
 	}
 
-	public setModUrl(index: number, version: string, url: string): boolean
+	public setModUrl(index: number, version: string, url: string | null): boolean
 	{
 		const row = this.table.getRow(index);
 		if (row == null) { return false; }
@@ -106,7 +106,12 @@ export class ModTable
 		const column = this.versions[version];
 		if (column == null) { return false; }
 
-		row.setCell(column, " [" + version + "](" + url + ")");
+		if(url == null) {
+			row.setCell(column, " -");
+		}
+		else {
+			row.setCell(column, " [" + version + "](" + url + ")");
+		}
 
 		return true;
 	}
