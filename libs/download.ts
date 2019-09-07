@@ -157,13 +157,27 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 				}
 				
 				// Download new jar
-				let [data, fileName] = await download(downloadUrl);
-				fileName = sanitizeFileName(fileName);
-				fs.writeFileSync(modDirectory + "/" + fileName, data);
-				log(progress + " + " + packModId(namespace, id) + " " + fileName);
+				try
+				{
+					let [data, fileName] = await download(downloadUrl);
+					fileName = sanitizeFileName(fileName);
+					fs.writeFileSync(modDirectory + "/" + fileName, data);
+					log(progress + " + " + packModId(namespace, id) + " " + fileName);
 				
-				manifest.updateMod(namespace, id, fileName, downloadUrl, version, sha256(data));
-				manifest.save(manifestPath);
+					manifest.updateMod(namespace, id, fileName, downloadUrl, version, sha256(data));
+					manifest.save(manifestPath);
+				}
+				catch (err)
+				{
+					if (err == "Non-200 status code returned")
+					{
+						log(progress + " + " + packModId(namespace, id) + " failed to download. Has the file been deleted from the source?");
+					}
+					else
+					{
+						log(progress + " + " + packModId(namespace, id) + " failed to download. " + err.toString());
+					}
+				}
 			}
 			else
 			{
