@@ -117,7 +117,8 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 					version = getCurseforgeFileId(url);
 					break;
 				case "curseforge-legacy":
-					downloadUrl = url + "/download";
+					let updatedUrl = url.replace(/https?:\/\/minecraft\.curseforge\.com\/projects\//,"https://www.curseforge.com/minecraft/mc-mods/");
+					downloadUrl = updatedUrl.replace(/\/files\/([0-9]+)\/?/,"/download/$1/file");
 					version = getCurseforgeFileId(url);
 					break;
 				case "url":
