@@ -8,6 +8,7 @@ import { ModManifest } from "./mod-manifest";
 import { getCurseforgeFileId } from "./curseforge";
 import { getModTables, ModTable } from "./mod-table";
 import { sha256, packModId, unpackModId, sanitizeFileName } from "./utils";
+import { ConcurrentManager } from "./concurrency";
 
 export interface IDownloadProgress {
 	percent: number,            // Overall percent (between 0 to 1)
@@ -68,6 +69,8 @@ export async function download(url: string, progressCallback: ((_: IDownloadProg
 
 export async function downloadMods(modTables: ITable[], minecraftVersion: string, modDirectory: string, manifestPath: string, log: (_: string) => void): Promise<void>
 {
+	const concurrency = new ConcurrentManager(5);
+
 	const manifest = ModManifest.fromFile(manifestPath) || new ModManifest();
 
 	// Create mods/ directory
@@ -157,27 +160,31 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 				}
 				
 				// Download new jar
-				try
-				{
-					let [data, fileName] = await download(downloadUrl);
-					fileName = sanitizeFileName(fileName);
-					fs.writeFileSync(modDirectory + "/" + fileName, data);
-					log(progress + " + " + packModId(namespace, id) + " " + fileName);
-				
-					manifest.updateMod(namespace, id, fileName, downloadUrl, version, sha256(data));
-					manifest.save(manifestPath);
-				}
-				catch (err)
-				{
-					if (err == "Non-200 status code returned")
+				concurrency.queueThread(async () =>
 					{
-						log(progress + " + " + packModId(namespace, id) + " failed to download. Has the file been deleted from the source?");
+						try
+						{
+							let [data, fileName] = await download(downloadUrl as string);
+							fileName = sanitizeFileName(fileName);
+							fs.writeFileSync(modDirectory + "/" + fileName, data);
+							log(progress + " + " + packModId(namespace, id) + " " + fileName);
+						
+							manifest.updateMod(namespace, id, fileName, downloadUrl as string, version as string, sha256(data));
+							manifest.save(manifestPath);
+						}
+						catch (err)
+						{
+							if (err == "Non-200 status code returned")
+							{
+								log(progress + " + " + packModId(namespace, id) + " failed to download. Has the file been deleted from the source?");
+							}
+							else
+							{
+								log(progress + " + " + packModId(namespace, id) + " failed to download. " + err.toString());
+							}
+						}
 					}
-					else
-					{
-						log(progress + " + " + packModId(namespace, id) + " failed to download. " + err.toString());
-					}
-				}
+				);
 			}
 			else
 			{
@@ -185,6 +192,8 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 			}
 		}
 	}
+
+	await concurrency.defer();
 
 	// Remove disabled mods
 	for (let [namespace, id] of manifest.getMods())
