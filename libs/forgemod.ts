@@ -15,7 +15,7 @@ export async function getLatestForgeVersion(minecraftVersion: string): Promise<s
 {
 	const url = "https://files.minecraftforge.net/maven/net/minecraftforge/forge/index_" + minecraftVersion + ".html";
 	const data = await request.get(url);
-	const urlMatch = data.match(/https?:\/\/files.minecraftforge.net\/[^"]+forge-([^"]+)-installer\.jar/);
+	const urlMatch = data.match(/\/maven\/[^"]+forge-([^"]+)-installer\.jar/);
 	if (urlMatch == null) { return null; }
 
 	return urlMatch[1];
