@@ -58,6 +58,47 @@ export function getInstalledMinecraftVersion(directory: string): string|null
 	return null;
 }
 
+export function getInstalledMinecraftFileName(directory: string): string|null
+{
+	const files = fs.readdirSync(directory);
+	for (let fileName of files)
+	{
+		const match = fileName.match(/minecraft_server\..+?\.jar/);
+		if (match == null) { continue; }
+
+		return match[0];
+	}
+
+	return null;
+}
+
+export async function uninstallServer(directory: string, log: (_: string) => void): Promise<boolean>
+{
+	let forgeFile = getInstalledForgeFileName(directory);
+
+	if (forgeFile)
+	{
+		await exec("rm", [forgeFile], { cwd: directory });
+		log("Removed old forge JAR.");
+	}
+	
+	let mcFile = getInstalledMinecraftFileName(directory);
+
+	if (mcFile)
+	{
+		await exec("rm", [mcFile], { cwd: directory });
+		log("Removed old minecraft JAR.");
+	}
+
+	if (fs.existsSync(directory + "/libraries"))
+	{
+		await exec("rm", ["-rf", "libraries"], { cwd: directory });
+		log("Removed old libraries directory.");
+	}
+
+	return true;
+}
+
 export async function installForge(directory: string, minecraftVersion: string, forgeVersion: string|null, log: (_: string) => void): Promise<string|null>
 {
 	if (!fs.existsSync(directory))

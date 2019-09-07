@@ -4,11 +4,12 @@ import * as path from "path";
 
 import { Document } from "./libs/markdown";
 import { downloadMods } from "./libs/download";
-import { isForgeInstalled, installForge, installLauncher, getInstalledForgeVersion } from "./libs/forgemod";
+import { isForgeInstalled, installForge, installLauncher, getInstalledForgeVersion, getLatestForgeVersion, uninstallServer } from "./libs/forgemod";
 import { getModTables } from "./libs/mod-table";
 import { WhitelistTable } from "./libs/whitelist-table";
 import { ServerProperties, Whitelist } from "./libs/minecraft";
 import { exec, parseArguments, readUri, toSet } from "./libs/utils";
+import { SemanticVersion } from "./libs/semanticversioning";
 
 async function applyConfig(serverDirectory: string, configDirectory: string): Promise<void>
 {
@@ -47,7 +48,7 @@ async function main(argc: number, argv: string[])
 	const markdownUri      = fixedArguments[2];
 	const configDirectory1  = mapArguments["config"];
 	const configDirectory2  = mapArguments["config-2"];
-	let forgeVersion: string|null = mapArguments["forge-version"];
+	let targetAmalgamatedForgeVersion: string|null = mapArguments["forge-version"];
 
 	const markdownData = await readUri(markdownUri);
 	if (markdownData == null)
@@ -64,12 +65,82 @@ async function main(argc: number, argv: string[])
 	if (!isForgeInstalled(serverDirectory, minecraftVersion))
 	{
 		console.log("Forge: Installing forge at " + serverDirectory + "...");
-		forgeVersion = await installForge(serverDirectory, minecraftVersion, forgeVersion, x => console.log("Forge: " + x));
+		targetAmalgamatedForgeVersion = await installForge(serverDirectory, minecraftVersion, targetAmalgamatedForgeVersion, x => console.log("Forge: " + x));
 	}
 	else
 	{
-		console.log("Forge: Already installed at " + serverDirectory + ".");
-		forgeVersion = getInstalledForgeVersion(serverDirectory);
+		let installedAmalgamatedForgeVersion = getInstalledForgeVersion(serverDirectory) || "0.0.0-0.0.0-unknown";
+
+		console.log("Forge: Already installed v" + installedAmalgamatedForgeVersion + " at " + serverDirectory + ".");
+		console.log("Forge: Checking for updates...");
+
+		// NB: Forge has not introduced alphabets or additional hyphens into their version strings since 1.7.10-pre4
+		// so I believe it is safe to extract version numbers like so:
+		let installedVersionExtraction = installedAmalgamatedForgeVersion.match(/^([\d\.]+)\-([\d\.]+)$/);
+
+		if (installedVersionExtraction)
+		{
+			let installedMinecraftVersion = SemanticVersion.fromString(installedVersionExtraction[1]);
+			let installedForgeVersion     = SemanticVersion.fromString(installedVersionExtraction[2], true);
+
+			if (!targetAmalgamatedForgeVersion)
+			{
+				// no version supplied via cli arguments
+				// try and grab the altest
+				targetAmalgamatedForgeVersion = await getLatestForgeVersion(minecraftVersion);
+			}
+
+			let needsUpdate = false;
+
+			if (targetAmalgamatedForgeVersion)
+			{
+				// only update if we are able to figure out a candidate target version
+
+				let targetVersionExtraction = targetAmalgamatedForgeVersion.match(/^([\d\.]+)\-([\d\.]+)$/);
+				if (targetVersionExtraction)
+				{
+					let targetMinecraftVersion = SemanticVersion.fromString(targetVersionExtraction[1]);
+					let targetForgeVersion     = SemanticVersion.fromString(targetVersionExtraction[2], true);
+		
+					// using isEqual instead of isAhead in case we want to rewind versions
+					if (!targetMinecraftVersion.isEqual(installedMinecraftVersion) || !targetForgeVersion.isEqual(installedForgeVersion))
+					{
+						needsUpdate = true;
+						
+						let isUpgrade = targetMinecraftVersion.isAhead(installedMinecraftVersion) || targetForgeVersion.isAhead(installedForgeVersion);
+						console.log(`Forge: Version discrepancy detected. ${isUpgrade ? "Upgrading" : "Downgrading"} to version ${targetAmalgamatedForgeVersion}.`);
+					}
+				}
+			}
+
+			if (needsUpdate)
+			{
+				console.log("Forge: Uninstalling existing versions of Forge...");
+
+				let uninstallSuccess = uninstallServer(serverDirectory, x => console.log("Forge: " + x));
+
+				if (uninstallSuccess)
+				{
+					console.log("Forge: Re-installing forge at " + serverDirectory + "...");
+					targetAmalgamatedForgeVersion = await installForge(serverDirectory, minecraftVersion, targetAmalgamatedForgeVersion, x => console.log("Forge: " + x));
+
+					console.log("Forge: Update complete!")
+				}
+				else
+				{
+					console.log("Forge: Aborting update.")
+				}
+			}
+			else
+			{
+				console.log("Forge: Installation is up-to-date!");
+			}
+		}
+		else
+		{
+			// NB: updater should auto abort if we were unable to parse the amaglamated Forge version
+			console.log("Forge: Unable to extract version data. Aborting Forge update.");
+		}
 	}
 
 	// launcher
@@ -169,7 +240,7 @@ async function main(argc: number, argv: string[])
 	{
 		setup += " --config-2 \"" + configDirectory2 + "\"";
 	}
-	setup += " --forge-version " + forgeVersion;
+	setup += " --forge-version " + targetAmalgamatedForgeVersion;
 	console.log("");
 	console.log("To repeat this install, run");
 	console.log("    " + setup);
