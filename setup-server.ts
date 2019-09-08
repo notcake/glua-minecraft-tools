@@ -141,6 +141,11 @@ async function main(argc: number, argv: string[])
 			// NB: updater should auto abort if we were unable to parse the amaglamated Forge version
 			console.log("Forge: Unable to extract version data. Aborting Forge update.");
 		}
+
+		if(!targetAmalgamatedForgeVersion) {
+			// for use later in this file to generate CLI arguments
+			targetAmalgamatedForgeVersion = installedAmalgamatedForgeVersion;
+		}
 	}
 
 	// launcher
