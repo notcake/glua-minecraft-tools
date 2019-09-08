@@ -83,10 +83,10 @@ async function main(argc: number, argv: string[])
 			let installedMinecraftVersion = SemanticVersion.fromString(installedVersionExtraction[1]);
 			let installedForgeVersion     = SemanticVersion.fromString(installedVersionExtraction[2], true);
 
-			if (!targetAmalgamatedForgeVersion)
+			if (targetAmalgamatedForgeVersion == "upgrade")
 			{
-				// no version supplied via cli arguments
-				// try and grab the altest
+				// explicit upgrade request supplied via cli arguments
+				// try and grab the latest version of Forge
 				targetAmalgamatedForgeVersion = await getLatestForgeVersion(minecraftVersion);
 			}
 
