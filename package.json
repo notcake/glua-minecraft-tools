@@ -1,5 +1,9 @@
 {
   "name": "glua-minecraft-tools",
+  "scripts": {
+    "lint": "eslint -c .eslintrc.json --ext .ts .",
+    "lint-fix": "eslint -c .eslintrc.json --ext .ts . --fix"
+  },
   "dependencies": {
     "child-process-promise": "^2.2.1",
     "express": "^4.16.4",
@@ -12,6 +16,10 @@
     "@types/node": "^10.12.1",
     "@types/request": "^2.48.0",
     "@types/request-promise": "^4.1.42",
+    "@typescript-eslint/eslint-plugin": "^2.4.0",
+    "@typescript-eslint/parser": "^2.4.0",
+    "eslint": "^6.5.1",
+    "shared-git-hooks": "^1.2.1",
     "typescript": "^3.1.5"
   }
 }
