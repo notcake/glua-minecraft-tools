@@ -231,7 +231,8 @@ export class Document implements IDocument
 				i++;
 				const table = new Table(header);
 				elementCollection.elements.push(table);
-				while (lines[i].indexOf("|") != -1)
+				while (i < lines.length &&
+				       lines[i].indexOf("|") != -1)
 				{
 					table.rows.push(new TableRow(lines[i]));
 					i++;
