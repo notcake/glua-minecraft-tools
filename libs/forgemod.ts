@@ -33,7 +33,7 @@ export function getInstalledForgeVersion(directory: string): string|null
 export function getInstalledForgeFileName(directory: string): string|null
 {
 	const files = fs.readdirSync(directory);
-	for (let fileName of files)
+	for (const fileName of files)
 	{
 		const match = fileName.match(/forge-.+?-universal\.jar/);
 		if (match == null) { continue; }
@@ -47,7 +47,7 @@ export function getInstalledForgeFileName(directory: string): string|null
 export function getInstalledMinecraftVersion(directory: string): string|null
 {
 	const files = fs.readdirSync(directory);
-	for (let fileName of files)
+	for (const fileName of files)
 	{
 		const match = fileName.match(/minecraft_server\.(.+?)\.jar/);
 		if (match == null) { continue; }
@@ -61,7 +61,7 @@ export function getInstalledMinecraftVersion(directory: string): string|null
 export function getInstalledMinecraftFileName(directory: string): string|null
 {
 	const files = fs.readdirSync(directory);
-	for (let fileName of files)
+	for (const fileName of files)
 	{
 		const match = fileName.match(/minecraft_server\..+?\.jar/);
 		if (match == null) { continue; }
@@ -74,15 +74,15 @@ export function getInstalledMinecraftFileName(directory: string): string|null
 
 export async function uninstallServer(directory: string, log: (_: string) => void): Promise<boolean>
 {
-	let forgeFile = getInstalledForgeFileName(directory);
+	const forgeFile = getInstalledForgeFileName(directory);
 
 	if (forgeFile)
 	{
 		await exec("rm", [forgeFile], { cwd: directory });
 		log("Removed old forge JAR.");
 	}
-	
-	let mcFile = getInstalledMinecraftFileName(directory);
+
+	const mcFile = getInstalledMinecraftFileName(directory);
 
 	if (mcFile)
 	{
@@ -122,7 +122,7 @@ export async function installForge(directory: string, minecraftVersion: string, 
 	let [installerJar, fileName] = await download(installerUrl);
 	fileName = sanitizeFileName(fileName);
 	fs.writeFileSync(directory + "/" + fileName, installerJar);
-	
+
 	log("Running " + fileName + "...");
 	await exec("java", ["-jar", fileName, "--installServer"], { cwd: directory });
 
@@ -160,7 +160,7 @@ export async function installLauncher(directory: string, log: (_: string) => voi
 		// Timeout
 		javaArguments += " -Dfml.readTimeout=120";
 
-		let minecraftArguments = "";
+		const minecraftArguments = "";
 
 		fs.writeFileSync(directory + "/start.sh",
 			"#!/bin/bash\n" +

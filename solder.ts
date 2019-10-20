@@ -44,7 +44,7 @@ export class Modpack
 		this.serverDirectory = serverDirectory;
 		this.manifestPath = this.serverDirectory + "/glua-minecraft-tools-manifest.json";
 	}
-	
+
 	public getInfo(): { [_: string]: any }
 	{
 		return {
@@ -77,7 +77,7 @@ export class Modpack
 	{
 		return this.blobs[sha256];
 	}
-	
+
 	public getMods(): ModEntry[]
 	{
 		return this.mods;
@@ -103,7 +103,7 @@ export class Modpack
 	{
 		const manifestInfo = fs.statSync(this.manifestPath);
 		const manifestTimestamp = manifestInfo.mtime;
-		
+
 		console.log("Updating modpack...");
 		this.minecraftVersion = getInstalledMinecraftVersion(this.serverDirectory);
 
@@ -116,7 +116,7 @@ export class Modpack
 
 			// Mods
 			const manifest = ModManifest.fromFile(this.manifestPath)!;
-			for (let [namespace, id] of manifest.getMods())
+			for (const [namespace, id] of manifest.getMods())
 			{
 				const fileName = manifest.getModFileName(namespace, id)!;
 				const sha256   = manifest.getModFileSHA256(namespace, id)!;
@@ -204,12 +204,12 @@ export class Modpack
 			if (fs.existsSync(this.serverDirectory + "/config"))
 			{
 				await exec("cp", ["-r", this.serverDirectory + "/config", tempDirectory + "/config"]);
-				
+
 				if (fs.existsSync(tempDirectory + "/config/fmlModState.properties"))
 				{
 					await exec("rm", ["-f", tempDirectory + "/config/fmlModState.properties"]);
 				}
-				
+
 				if (fs.existsSync(tempDirectory + "/config/shadowfacts/DiscordChat"))
 				{
 					await exec("rm", ["-rf", tempDirectory + "/config/shadowfacts/DiscordChat"]);
@@ -272,99 +272,99 @@ async function main(argc: number, argv: string[])
 	}
 
 	const modpack = new Modpack(modpackId, modpackName, baseUrl, serverDirectory);
-	
+
 	const app = express();
 	app.set("json spaces", 4);
 	app.use((request, response, next) =>
-		{
-			console.log(request.method + " " + request.url);
+	{
+		console.log(request.method + " " + request.url);
 
-			next();
-		}
+		next();
+	}
 	);
 
 	app.get("/api/", (request, response) =>
-		{
-			response.json({
-				api:     "TechnicSolder",
-				version: "v0.7.4.0",
-				stream:  "DEV"
-			});
-		}
+	{
+		response.json({
+			api:     "TechnicSolder",
+			version: "v0.7.4.0",
+			stream:  "DEV"
+		});
+	}
 	);
 
 	app.get("/api/verify/:apiKey([0-9a-fA-F]+)", (request, response) =>
-		{
-			response.json({
-				valid: "Key validated."
-			});
-		}
+	{
+		response.json({
+			valid: "Key validated."
+		});
+	}
 	);
 
 	app.get("/api/modpack/", async (request, response) =>
+	{
+		if (request.query["include"] == "full")
 		{
-			if (request.query["include"] == "full")
-			{
-				await modpack.update();
+			await modpack.update();
 
-				response.json({
-					modpacks: { [modpackId]: modpack.getInfo() },
-					mirror_url: baseUrl
-				});
-			}
-			else
-			{
-				response.json({
-					modpacks: { [modpackId]: modpackName },
-					mirror_url: baseUrl
-				});
-			}
+			response.json({
+				modpacks: { [modpackId]: modpack.getInfo() },
+				mirror_url: baseUrl
+			});
 		}
+		else
+		{
+			response.json({
+				modpacks: { [modpackId]: modpackName },
+				mirror_url: baseUrl
+			});
+		}
+	}
 	);
 
 	app.get("/api/modpack/" + modpackId + "/", async (request, response) =>
-		{
-			await modpack.update();
+	{
+		await modpack.update();
 
-			response.json(modpack.getInfo());
-		}
+		response.json(modpack.getInfo());
+	}
 	);
 
 	app.get("/api/modpack/" + modpackId + "/:version([0-9a-fA-F]+)", async (request, response) =>
+	{
+		await modpack.update();
+
+		const version = request.params["version"];
+		if (version != modpack.getVersion())
 		{
-			await modpack.update();
-
-			const version = request.params["version"];
-			if (version != modpack.getVersion())
-			{
-				response.json({
-					error: "\n\nThis build is out of date. Please go to Modpack Options and select build " + modpack.getVersion() + ".\nIf build " + modpack.getVersion() + " does not appear, try restarting the Technic Launcher."
-				});
-				return;
-			}
-
 			response.json({
-				minecraft: modpack.getMinecraftVersion(),
-				java:      "1.8",
-				memory:    "0",
-				forge:     null,
-				mods:      modpack.getMods()
+				error: "\n\nThis build is out of date. Please go to Modpack Options and select build " + modpack.getVersion() + ".\nIf build " + modpack.getVersion() + " does not appear, try restarting the Technic Launcher."
 			});
+			return;
 		}
+
+		response.json({
+			minecraft: modpack.getMinecraftVersion(),
+			java:      "1.8",
+			memory:    "0",
+			forge:     null,
+			mods:      modpack.getMods()
+		});
+	}
 	);
 
 	app.get("/download/:sha256([0-9a-fA-F]+).zip", (request, response) =>
+	{
+		const sha256 = request.params["sha256"];
+		if (modpack.getBlob(sha256) == null)
 		{
-			const sha256 = request.params["sha256"];
-			if (modpack.getBlob(sha256) == null)
-			{
-				response.status(404);
-				response.end();
-				return;
-			}
-
-			response.end(modpack.getBlob(sha256));
+			response.status(404);
+			response.end();
+			return;
 		}
+
+		response.end(modpack.getBlob(sha256));
+	}
 	);
 
 	await modpack.update();

@@ -1,4 +1,4 @@
-import { Document, Section, ISection, Table, ITable, IElementCollection } from "./markdown";
+import { Document, ITable } from "./markdown";
 
 export class WhitelistTable
 {
@@ -30,7 +30,7 @@ export class WhitelistTable
 	public getWhitelistedNames(): string[]
 	{
 		const names: string[] = [];
-		for (let name in this.names)
+		for (const name in this.names)
 		{
 			if (this.names[name])
 			{
@@ -42,7 +42,7 @@ export class WhitelistTable
 
 	public static fromDocument(document: Document): WhitelistTable|null
 	{
-		for (let table of document.getTables())
+		for (const table of document.getTables())
 		{
 			if (table.getHeader().getCellCount() >= 3 &&
 			    table.getHeader().getCell(0)!.trim().toLowerCase() == "name")

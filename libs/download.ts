@@ -6,8 +6,8 @@ const requestProgress = require("request-progress");
 import { ITable } from "./markdown";
 import { ModManifest } from "./mod-manifest";
 import { getCurseforgeFileId } from "./curseforge";
-import { getModTables, ModTable } from "./mod-table";
-import { sha256, packModId, unpackModId, sanitizeFileName } from "./utils";
+import { ModTable } from "./mod-table";
+import { sha256, packModId, sanitizeFileName } from "./utils";
 import { ConcurrentManager } from "./concurrency";
 
 export interface IDownloadProgress {
@@ -26,44 +26,47 @@ export interface IDownloadProgress {
 export async function download(url: string, progressCallback: ((_: IDownloadProgress) => void)|null = null): Promise<[Buffer, string]>
 {
 	return new Promise<[Buffer, string]>((resolve, reject) =>
-		{
-			let reqState = request(
-				url,
-				{ encoding: null },
-				(err, result, body) =>
-				{
-					if(err) { reject(err); return; }
-
-					if (result.statusCode !== 200) { reject("Non-200 status code returned"); return; }
-
-					let fileName;
-					
-					// Try content-disposition first
-					let contentDisposition: string = <any> (result.headers["content-disposition"] || result.headers["Content-Disposition"]);
-					if (contentDisposition) {
-						let fileMatch = contentDisposition.match(/filename\*?=(?:(?:[\'\"]([^\'\"]+))|(?:(\S+)))/);
-						
-						if (fileMatch && (fileMatch[1] || fileMatch[2])) {
-							fileName = (fileMatch[1] || fileMatch[2]) as string;
-						}
-					}
-					
-					// and fallback to last entry in URL
-					if(!fileName) {
-						fileName = result.request.uri.pathname.split("/").pop() as string;
-					}
-					
-					resolve([body, decodeURIComponent(fileName)]);
-				}
-			);
-
-			if (progressCallback != null)
+	{
+		const reqState = request(
+			url,
+			{ encoding: null },
+			(err, result, body) =>
 			{
-				requestProgress(reqState).on("progress", progressCallback);
-			}
+				if (err) { reject(err); return; }
 
-			reqState.catch(reject);
+				if (result.statusCode !== 200) { reject("Non-200 status code returned"); return; }
+
+				let fileName;
+
+				// Try content-disposition first
+				const contentDisposition: string = <any> (result.headers["content-disposition"] || result.headers["Content-Disposition"]);
+				if (contentDisposition)
+				{
+					const fileMatch = contentDisposition.match(/filename\*?=(?:(?:['"]([^'"]+))|(?:(\S+)))/);
+
+					if (fileMatch && (fileMatch[1] || fileMatch[2]))
+					{
+						fileName = (fileMatch[1] || fileMatch[2]) as string;
+					}
+				}
+
+				// and fallback to last entry in URL
+				if (!fileName)
+				{
+					fileName = result.request.uri.pathname.split("/").pop() as string;
+				}
+
+				resolve([body, decodeURIComponent(fileName)]);
+			}
+		);
+
+		if (progressCallback != null)
+		{
+			requestProgress(reqState).on("progress", progressCallback);
 		}
+
+		reqState.catch(reject);
+	}
 	);
 }
 
@@ -82,7 +85,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 
 	const enabledMods: { [_: string]: true } = {};
 
-	for (let table of modTables)
+	for (const table of modTables)
 	{
 		const modTable = new ModTable(table);
 		const modCount = modTable.getModCount();
@@ -91,9 +94,9 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 			let progress = (i + 1).toString();
 			progress = " ".repeat(Math.max(0, modCount.toString().length - progress.length)) + progress;
 			progress = "[" + progress + "/" + modCount.toString() + "]";
-			
+
 			const [namespace, id] = modTable.getModId(i)!;
-			
+
 			// Check if enabled
 			if (!modTable.isModEnabled(i))
 			{
@@ -116,14 +119,16 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 			switch (namespace)
 			{
 				case "curseforge":
-					downloadUrl = url.replace(/\/files\/([0-9]+)\/?/,"/download/$1/file");
+					downloadUrl = url.replace(/\/files\/([0-9]+)\/?/, "/download/$1/file");
 					version = getCurseforgeFileId(url);
 					break;
 				case "curseforge-legacy":
-					let updatedUrl = url.replace(/https?:\/\/minecraft\.curseforge\.com\/projects\//,"https://www.curseforge.com/minecraft/mc-mods/");
-					downloadUrl = updatedUrl.replace(/\/files\/([0-9]+)\/?/,"/download/$1/file");
+				{
+					const updatedUrl = url.replace(/https?:\/\/minecraft\.curseforge\.com\/projects\//, "https://www.curseforge.com/minecraft/mc-mods/");
+					downloadUrl = updatedUrl.replace(/\/files\/([0-9]+)\/?/, "/download/$1/file");
 					version = getCurseforgeFileId(url);
 					break;
+				}
 				case "url":
 					downloadUrl = url;
 					version = url;
@@ -158,32 +163,32 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 						if (e.code != "ENOENT") { throw e; }
 					}
 				}
-				
+
 				// Download new jar
 				concurrency.queueThread(async () =>
+				{
+					try
 					{
-						try
+						let [data, fileName] = await download(downloadUrl as string);
+						fileName = sanitizeFileName(fileName);
+						fs.writeFileSync(modDirectory + "/" + fileName, data);
+						log(progress + " + " + packModId(namespace, id) + " " + fileName);
+
+						manifest.updateMod(namespace, id, fileName, downloadUrl as string, version as string, sha256(data));
+						manifest.save(manifestPath);
+					}
+					catch (err)
+					{
+						if (err == "Non-200 status code returned")
 						{
-							let [data, fileName] = await download(downloadUrl as string);
-							fileName = sanitizeFileName(fileName);
-							fs.writeFileSync(modDirectory + "/" + fileName, data);
-							log(progress + " + " + packModId(namespace, id) + " " + fileName);
-						
-							manifest.updateMod(namespace, id, fileName, downloadUrl as string, version as string, sha256(data));
-							manifest.save(manifestPath);
+							log(progress + " + " + packModId(namespace, id) + " failed to download. Has the file been deleted from the source?");
 						}
-						catch (err)
+						else
 						{
-							if (err == "Non-200 status code returned")
-							{
-								log(progress + " + " + packModId(namespace, id) + " failed to download. Has the file been deleted from the source?");
-							}
-							else
-							{
-								log(progress + " + " + packModId(namespace, id) + " failed to download. " + err.toString());
-							}
+							log(progress + " + " + packModId(namespace, id) + " failed to download. " + err.toString());
 						}
 					}
+				}
 				);
 			}
 			else
@@ -196,7 +201,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 	await concurrency.defer();
 
 	// Remove disabled mods
-	for (let [namespace, id] of manifest.getMods())
+	for (const [namespace, id] of manifest.getMods())
 	{
 		if (!enabledMods[packModId(namespace, id)])
 		{

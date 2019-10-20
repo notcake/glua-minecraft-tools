@@ -7,7 +7,7 @@ request.defaults({
 	headers: {
 		["User-Agent"]: fakeUserAgent(),
 	}
-})
+});
 
 const versionMap = {
 	"1.7":	  "1738749986%3A5",
@@ -33,27 +33,27 @@ versionMap["1.14.4"] = versionMap["1.14"];
 async function getCurseforgeLinkForVersion(id: string, version: string): Promise<string|null>
 {
 	const body = await request.get("https://www.curseforge.com/minecraft/mc-mods/" + id + "/files/all?filter-game-version=" + versionMap[version]);
-	const regex = /\/minecraft\/mc\-mods\/[^\/]+\/download\/([0-9]+)"\s*class="button button\-\-hollow/;
+	const regex = /\/minecraft\/mc-mods\/[^/]+\/download\/([0-9]+)"\s*class="button button--hollow/;
 	const match = body.match(regex);
 	if (match == null) { return null; }
-	return "https://www.curseforge.com/minecraft/mc-mods/" + id + "/files/" + match[1]
+	return "https://www.curseforge.com/minecraft/mc-mods/" + id + "/files/" + match[1];
 }
 
 export async function getCurseforgeUrls(id: string, versions: string[]): Promise<{ [_: string]: string }>
 {
 	// Follow redirect
 	const body = await request.get("https://www.curseforge.com/minecraft/mc-mods/" + id);
-	const regex = /<meta property="og:url" content="https:\/\/www.curseforge.com\/minecraft\/mc\-mods\/([^"]+)" \/>/;
+	const regex = /<meta property="og:url" content="https:\/\/www.curseforge.com\/minecraft\/mc-mods\/([^"]+)" \/>/;
 	const match = body.match(regex);
 	if (match != null) { id = match[1]; }
 
 	const tasks: { [_: string]: Promise<string|null> } = {};
 	const urls: { [_: string]: string } = {};
-	for (let version of versions)
+	for (const version of versions)
 	{
 		tasks[version] = getCurseforgeLinkForVersion(id, version);
 	}
-	for (let version of versions)
+	for (const version of versions)
 	{
 		const url = await tasks[version];
 		if (url == null) { continue; }

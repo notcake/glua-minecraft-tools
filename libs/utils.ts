@@ -67,22 +67,22 @@ export function parseArguments(argc: number, argv: string[]): [string[], { [_: s
 
 export async function readUri(uri: string): Promise<string|null>
 {
-        try
-        {
-                if (uri.toLowerCase().startsWith("http://") ||
+	try
+	{
+		if (uri.toLowerCase().startsWith("http://") ||
                     uri.toLowerCase().startsWith("https://"))
-                {
-                        return await request.get(uri);
-                }
-                else
-                {
-                        return fs.readFileSync(uri, "utf-8");
-                }
-        }
-        catch (e)
-        {
-                return null;
-        }
+		{
+			return await request.get(uri);
+		}
+		else
+		{
+			return fs.readFileSync(uri, "utf-8");
+		}
+	}
+	catch (e)
+	{
+		return null;
+	}
 }
 
 export function sanitizeFileName(fileName: string): string
@@ -93,7 +93,7 @@ export function sanitizeFileName(fileName: string): string
 export function toSet(strings: string[]): { [_: string]: true }
 {
 	const set: { [_: string]: true } = {};
-	for (let item of strings)
+	for (const item of strings)
 	{
 		set[item] = true;
 	}

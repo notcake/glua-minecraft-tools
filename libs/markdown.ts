@@ -339,6 +339,7 @@ export class Document extends ElementCollection implements IDocument
 		queue.push(this);
 
 		let section: IElementCollection|undefined;
+		// eslint-disable-next-line no-cond-assign
 		while (section = queue.pop())
 		{
 			for (let i = 0; i < section.getCount(); i++)

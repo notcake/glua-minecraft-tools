@@ -1,6 +1,6 @@
 import { ConcurrentManager } from "./libs/concurrency";
 import { getCurseforgeUrls, getCurseforgeFileId } from "./libs/curseforge";
-import { Document, Section, ISection, Table, ITable, IElementCollection } from "./libs/markdown";
+import { Document } from "./libs/markdown";
 import { getModTables, ModTable } from "./libs/mod-table";
 import { packModId, parseArguments, readUri } from "./libs/utils";
 
@@ -19,37 +19,38 @@ async function processTable(modTable: ModTable): Promise<void>
 			case "curseforge":
 			case "curseforge-legacy":
 				concurrency.queueThread(async () =>
+				{
+					const newUrls = await getCurseforgeUrls(id, versions);
+
+					console.error("Processing " + packModId(namespace, id) + "...");
+					for (let j = 0; j < versions.length; j++)
 					{
-						const newUrls = await getCurseforgeUrls(id, versions);
+						const version = versions[j];
 
-						console.error("Processing " + packModId(namespace, id) + "...");
-						for (let j = 0; j < versions.length; j++)
+						const previousUrl = modTable.getModUrl(i, version);
+						const nextUrl	  = newUrls[version];
+
+						if (previousUrl != nextUrl)
 						{
-							const version = versions[j];
-
-							const previousUrl = modTable.getModUrl(i, version);
-							const nextUrl	  = newUrls[version];
-
-							if (previousUrl != nextUrl)
+							const previous = previousUrl ? getCurseforgeFileId(previousUrl) : null;
+							const next     = nextUrl     ? getCurseforgeFileId(nextUrl)     : null;
+							if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
 							{
-								const previous = previousUrl ? getCurseforgeFileId(previousUrl) : null;
-								const next     = nextUrl     ? getCurseforgeFileId(nextUrl)     : null;
-								if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
-								{
-									console.error(" " + version + ": " + previous + " -> " + next);
-									modTable.setModUrl(i, version, nextUrl);
-								}
-								else
-								{
-									modTable.setModUrl(i, version, null);
-									console.error(" !!! " + version + ": " + previous + " -> " + next);
-								}
+								console.error(" " + version + ": " + previous + " -> " + next);
+								modTable.setModUrl(i, version, nextUrl);
 							}
-							else if(nextUrl == null) {
+							else
+							{
 								modTable.setModUrl(i, version, null);
+								console.error(" !!! " + version + ": " + previous + " -> " + next);
 							}
 						}
+						else if (nextUrl == null)
+						{
+							modTable.setModUrl(i, version, null);
+						}
 					}
+				}
 				);
 				break;
 			case "url":
@@ -68,7 +69,7 @@ async function processTable(modTable: ModTable): Promise<void>
 
 async function main(argc: number, argv: string[])
 {
-	const [fixedArguments, mapArguments] = parseArguments(argc, argv);
+	const [fixedArguments, ] = parseArguments(argc, argv);
 	if (fixedArguments.length != 1)
 	{
 		console.error("Usage: ts-node update-mods-md <mods.md file or url> > output.md");
@@ -86,7 +87,7 @@ async function main(argc: number, argv: string[])
 
 
 	const document = Document.fromString(data);
-	for (let table of getModTables(document))
+	for (const table of getModTables(document))
 	{
 		await processTable(new ModTable(table));
 	}

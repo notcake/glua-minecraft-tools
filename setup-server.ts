@@ -69,19 +69,19 @@ async function main(argc: number, argv: string[])
 	}
 	else
 	{
-		let installedAmalgamatedForgeVersion = getInstalledForgeVersion(serverDirectory) || "0.0.0-0.0.0-unknown";
+		const installedAmalgamatedForgeVersion = getInstalledForgeVersion(serverDirectory) || "0.0.0-0.0.0-unknown";
 
 		console.log("Forge: Already installed v" + installedAmalgamatedForgeVersion + " at " + serverDirectory + ".");
 		console.log("Forge: Checking for updates...");
 
 		// NB: Forge has not introduced alphabets or additional hyphens into their version strings since 1.7.10-pre4
 		// so I believe it is safe to extract version numbers like so:
-		let installedVersionExtraction = installedAmalgamatedForgeVersion.match(/^([\d\.]+)\-([\d\.]+)$/);
+		const installedVersionExtraction = installedAmalgamatedForgeVersion.match(/^([\d.]+)-([\d.]+)$/);
 
 		if (installedVersionExtraction)
 		{
-			let installedMinecraftVersion = SemanticVersion.fromString(installedVersionExtraction[1]);
-			let installedForgeVersion     = SemanticVersion.fromString(installedVersionExtraction[2], true);
+			const installedMinecraftVersion = SemanticVersion.fromString(installedVersionExtraction[1]);
+			const installedForgeVersion     = SemanticVersion.fromString(installedVersionExtraction[2], true);
 
 			if (targetAmalgamatedForgeVersion == "upgrade")
 			{
@@ -96,18 +96,18 @@ async function main(argc: number, argv: string[])
 			{
 				// only update if we are able to figure out a candidate target version
 
-				let targetVersionExtraction = targetAmalgamatedForgeVersion.match(/^([\d\.]+)\-([\d\.]+)$/);
+				const targetVersionExtraction = targetAmalgamatedForgeVersion.match(/^([\d.]+)-([\d.]+)$/);
 				if (targetVersionExtraction)
 				{
-					let targetMinecraftVersion = SemanticVersion.fromString(targetVersionExtraction[1]);
-					let targetForgeVersion     = SemanticVersion.fromString(targetVersionExtraction[2], true);
-		
+					const targetMinecraftVersion = SemanticVersion.fromString(targetVersionExtraction[1]);
+					const targetForgeVersion     = SemanticVersion.fromString(targetVersionExtraction[2], true);
+
 					// using isEqual instead of isAhead in case we want to rewind versions
 					if (!targetMinecraftVersion.isEqual(installedMinecraftVersion) || !targetForgeVersion.isEqual(installedForgeVersion))
 					{
 						needsUpdate = true;
-						
-						let isUpgrade = targetMinecraftVersion.isAhead(installedMinecraftVersion) || targetForgeVersion.isAhead(installedForgeVersion);
+
+						const isUpgrade = targetMinecraftVersion.isAhead(installedMinecraftVersion) || targetForgeVersion.isAhead(installedForgeVersion);
 						console.log(`Forge: Version discrepancy detected. ${isUpgrade ? "Upgrading" : "Downgrading"} to version ${targetAmalgamatedForgeVersion}.`);
 					}
 				}
@@ -117,18 +117,18 @@ async function main(argc: number, argv: string[])
 			{
 				console.log("Forge: Uninstalling existing versions of Forge...");
 
-				let uninstallSuccess = uninstallServer(serverDirectory, x => console.log("Forge: " + x));
+				const uninstallSuccess = uninstallServer(serverDirectory, x => console.log("Forge: " + x));
 
 				if (uninstallSuccess)
 				{
 					console.log("Forge: Re-installing forge at " + serverDirectory + "...");
 					targetAmalgamatedForgeVersion = await installForge(serverDirectory, minecraftVersion, targetAmalgamatedForgeVersion, x => console.log("Forge: " + x));
 
-					console.log("Forge: Update complete!")
+					console.log("Forge: Update complete!");
 				}
 				else
 				{
-					console.log("Forge: Aborting update.")
+					console.log("Forge: Aborting update.");
 				}
 			}
 			else
@@ -142,7 +142,8 @@ async function main(argc: number, argv: string[])
 			console.log("Forge: Unable to extract version data. Aborting Forge update.");
 		}
 
-		if(!targetAmalgamatedForgeVersion) {
+		if (!targetAmalgamatedForgeVersion)
+		{
 			// for use later in this file to generate CLI arguments
 			targetAmalgamatedForgeVersion = installedAmalgamatedForgeVersion;
 		}
@@ -169,7 +170,7 @@ async function main(argc: number, argv: string[])
 		const whitelistPath = serverDirectory + "/whitelist.json";
 		const whitelist = Whitelist.fromFile(whitelistPath) || new Whitelist();
 		const whitelistNames = whitelistTable.getWhitelistedNames();
-		for (let name of whitelistNames)
+		for (const name of whitelistNames)
 		{
 			if (whitelist.containsUser(name))
 			{
@@ -188,7 +189,7 @@ async function main(argc: number, argv: string[])
 		}
 
 		const whitelistNamesSet = toSet(whitelistNames);
-		for (let name of whitelist.getUsers())
+		for (const name of whitelist.getUsers())
 		{
 			if (whitelistNamesSet[name] == null)
 			{
@@ -218,7 +219,7 @@ async function main(argc: number, argv: string[])
 	set("max-tick-time", "120000");
 	set("allow-flight", "true");
 	set("level-type", "BIOMESOP");
-        set("max-players", "30");
+	set("max-players", "30");
 	set("white-list", "true");
 
 	// disable spawn protection

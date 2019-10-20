@@ -9,7 +9,7 @@ export async function getUserUuid(name: string): Promise<string|null>
 
 	const json = JSON.parse(response);
 	const match = json["id"].match(/(........)(....)(....)(....)(............)/);
-	if (match == null) { return null }
+	if (match == null) { return null; }
 
 	return match[1] + "-" + match[2] + "-" + match[3] + "-" + match[4] + "-" + match[5];
 }
@@ -42,7 +42,7 @@ export class Whitelist
 	public getUsers(): string[]
 	{
 		const users: string[] = [];
-		for (let name in this.nameUuids)
+		for (const name in this.nameUuids)
 		{
 			users.push(name);
 		}
@@ -57,7 +57,7 @@ export class Whitelist
 	public save(path: string)
 	{
 		const json: { uuid: string, name: string }[] = [];
-		for (let name in this.nameUuids)
+		for (const name in this.nameUuids)
 		{
 			json.push({ uuid: this.nameUuids[name], name: name });
 		}
@@ -83,7 +83,7 @@ export class Whitelist
 	{
 		const whitelist = new Whitelist();
 
-		for (let entry of JSON.parse(json))
+		for (const entry of JSON.parse(json))
 		{
 			whitelist.nameUuids[entry["name"]] = entry["uuid"];
 		}

@@ -1,4 +1,4 @@
-import { Document, ITable, ITableRow } from "./markdown";
+import { Document, ITable } from "./markdown";
 
 export function isModTable(table: ITable): boolean
 {
@@ -60,7 +60,7 @@ export class ModTable
 	{
 		const row = this.table.getRow(index);
 		if (row == null) { return null; }
-		
+
 		for (let x = 0; x < row.getCellCount(); x++)
 		{
 			const match = row.getCell(x)!.match(/\[[^\]]+\]\(([^)]+)\)/);
@@ -68,13 +68,13 @@ export class ModTable
 
 			const url = match[1];
 
-			const curseforgeMatchOld = url.match(/https?:\/\/minecraft.curseforge.com\/projects\/([^\/]+)\//);
+			const curseforgeMatchOld = url.match(/https?:\/\/minecraft.curseforge.com\/projects\/([^/]+)\//);
 			if (curseforgeMatchOld != null) { return ["curseforge-legacy", curseforgeMatchOld[1]]; }
 
-			const curseforgeMatchWWW = url.match(/https?:\/\/www.curseforge.com\/minecraft\/mc\-mods\/([^\/]+)\//);
+			const curseforgeMatchWWW = url.match(/https?:\/\/www.curseforge.com\/minecraft\/mc-mods\/([^/]+)\//);
 			if (curseforgeMatchWWW != null) { return ["curseforge", curseforgeMatchWWW[1]]; }
 
-			const curseforgeMatch = url.match(/https?:\/\/curseforge.com\/minecraft\/mc\-mods\/([^\/]+)\//);
+			const curseforgeMatch = url.match(/https?:\/\/curseforge.com\/minecraft\/mc-mods\/([^/]+)\//);
 			if (curseforgeMatch != null) { return ["curseforge", curseforgeMatch[1]]; }
 		}
 
@@ -92,10 +92,10 @@ export class ModTable
 		const cell = row.getCell(column);
 		if (cell == null) { return null; }
 
-		const match = cell.match(/\[[^\]]+\]\(([^\)]+)\)/);
+		const match = cell.match(/\[[^\]]+\]\(([^)]+)\)/);
 		return match ? match[1] : null;
 	}
-	
+
 	public isModEnabled(index: number): boolean
 	{
 		const row = this.table.getRow(index);
@@ -112,10 +112,12 @@ export class ModTable
 		const column = this.versions[version];
 		if (column == null) { return false; }
 
-		if(url == null) {
+		if (url == null)
+		{
 			row.setCell(column, " -");
 		}
-		else {
+		else
+		{
 			row.setCell(column, " [" + version + "](" + url + ")");
 		}
 

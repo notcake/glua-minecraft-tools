@@ -16,12 +16,12 @@ export class ModManifest
 	public constructor()
 	{
 	}
-	
+
 	public addMod(namespace: string, id: string, fileName: string, url: string, version: string, sha256: string)
 	{
 		this.updateMod(namespace, id, fileName, url, version, sha256);
 	}
-	
+
 	public containsMod(namespace: string, id: string): boolean
 	{
 		return this.mods[packModId(namespace, id)] != null;
@@ -49,12 +49,12 @@ export class ModManifest
 		const modEntry = this.mods[packModId(namespace, id)];
 		return modEntry != null ? modEntry.sha256 : null;
 	}
-	
+
 	public removeMod(namespace: string, id: string)
 	{
 		delete this.mods[packModId(namespace, id)];
 	}
-	
+
 	public updateMod(namespace: string, id: string, fileName: string, url: string, version: string, sha256: string)
 	{
 		this.mods[packModId(namespace, id)] = {
@@ -90,10 +90,10 @@ export class ModManifest
 		const manifest = new ModManifest();
 
 		const mods = JSON.parse(json);
-		for (let fullId in mods)
+		for (const fullId in mods)
 		{
 			const [namespace, id] = unpackModId(fullId);
-			
+
 			manifest.addMod(
 				namespace,
 				id,
