@@ -10,16 +10,15 @@ export class WhitelistTable
 	{
 		this.table = table;
 
-		for (let y = 0; y < this.table.getRowCount(); y++)
+		for (const row of this.table.rows)
 		{
-			const row = this.table.getRow(y)!;
-			let name = row.getCell(0)!.trim();
+			let name = row.cells[0].text.trim();
 			name = name.replace("\\", "");
 			while (name.startsWith("+ "))
 			{
 				name = name.substring(2);
 			}
-			const approved = row.getCell(2)!.indexOf("✔") != -1;
+			const approved = row.cells[2].text.indexOf("✔") != -1;
 
 			if (name == "_Name_") { continue; }
 
@@ -44,8 +43,8 @@ export class WhitelistTable
 	{
 		for (const table of document.getTables())
 		{
-			if (table.getHeader().getCellCount() >= 3 &&
-			    table.getHeader().getCell(0)!.trim().toLowerCase() == "name")
+			if (table.header.cells.length >= 3 &&
+			    table.header.cells[0].text.trim().toLowerCase() == "name")
 			{
 				return new WhitelistTable(table);
 			}

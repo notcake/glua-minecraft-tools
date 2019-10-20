@@ -1,75 +1,80 @@
-export interface IElement
-{
-}
+export type IElement = ITable | ISection | ILines;
 
-export interface ITable extends IElement
+export interface ITable
 {
-	getHeader(): ITableRow;
-	getRow(index: number): ITableRow|null;
-	getRowCount(): number;
+	readonly type: "table";
+
+	readonly rows: ITableRow[];
+
+	readonly header: ITableRow;
 
 	formatWidths();
 }
 
-export interface ITableRow extends IElement
+export interface ITableCell
 {
-	getCell(index: number): string|null;
-	getCellCount(): number;
-	getCellWidth(index: number): number|null;
-	setCell(index: number, text: string);
-	setCellWidth(index: number, width: number);
+	text: string;
+	width: number;
+}
+
+export interface ITableRow
+{
+	readonly cells: ITableCell[];
 }
 
 export interface IElementCollection
 {
-	get(index: number): IElement|null;
-	getCount(): number;
+	readonly elements: IElement[];
 }
 
-export interface ISection extends IElementCollection, IElement
+export interface ISection extends IElementCollection
 {
-	getTitle(): string;
-	getLevel(): number;
+	readonly type: "section";
+
+	title: string;
+	level: number;
 }
 
-export interface ILines extends IElement
+export interface ILines
 {
+	readonly type: "lines";
+
+	readonly lines: string[];
 }
 
 export interface IDocument extends IElementCollection
 {
 }
 
-export class ElementCollection implements IElementCollection
+export class TableCell implements ITableCell
 {
-	protected elements: IElement[] = [];
+	private _text: string;
+	public width: number;
 
-	public constructor()
+	public constructor(text: string, width: number|null = null)
 	{
+		width = width != null ? width : text.length;
+
+		this.text = text;
+		this.width = Math.max(width, this.text.length);
 	}
 
-	// IElementCollection
-	public get(index: number): IElement|null
+	// ITableCell
+	public get text()
 	{
-		return this.elements[index];
+		return this._text;
 	}
 
-	public getCount(): number
+	public set text(value: string)
 	{
-		return this.elements.length;
-	}
-
-	// ElementCollection
-	public add(element: IElement)
-	{
-		this.elements.push(element);
+		this._text = value;
+		this.width = Math.max(this.width, this._text.length);
 	}
 }
 
 export class TableRow implements ITableRow
 {
-	private cells:      string[] = [];
-	private cellWidths: number[] = [];
+	public cells: ITableCell[];
 
 	public constructor(line: string)
 	{
@@ -81,8 +86,7 @@ export class TableRow implements ITableRow
 		const cells = line.split("|");
 		cells.shift();
 		cells.pop();
-		this.cellWidths = cells.map(x => x.length);
-		this.cells = cells;
+		this.cells = cells.map(x => new TableCell(x));
 	}
 
 	public toString()
@@ -90,50 +94,18 @@ export class TableRow implements ITableRow
 		let row = "|";
 		for (let i = 0; i < this.cells.length; i++)
 		{
-			row += this.cells[i] + " ".repeat(Math.max(0, this.cellWidths[i] - 2 - this.cells[i].length)) + "|";
+			row += this.cells[i].text + " ".repeat(Math.max(0, this.cells[i].width - 2 - this.cells[i].text.length)) + "|";
 		}
 		return row;
-	}
-
-	// ITableRow
-	public getCell(index: number): string|null
-	{
-		return this.cells[index];
-	}
-
-	public getCellCount(): number
-	{
-		return this.cells.length;
-	}
-
-	public getCellWidth(index: number): number|null
-	{
-		return this.cellWidths[index];
-	}
-
-	public setCell(index: number, text: string)
-	{
-		this.cells[index] = text;
-		this.cellWidths[index] = Math.max(this.cellWidths[index], text.length);
-	}
-
-	public setCellWidth(index: number, width: number)
-	{
-		this.cellWidths[index] = width;
-	}
-
-	// TableRow
-	public addCell(text: string)
-	{
-		this.cells.push(text);
-		this.cellWidths.push(text.length);
 	}
 }
 
 export class Table implements ITable
 {
-	private header: ITableRow;
-	private rows: ITableRow[] = [];
+	public readonly type = "table";
+
+	public readonly header: ITableRow;
+	public rows: ITableRow[] = [];
 
 	public constructor(header: ITableRow)
 	{
@@ -144,29 +116,14 @@ export class Table implements ITable
 	{
 		const header = this.header.toString();
 		let separator = "|";
-		for (let i = 0; i < this.header.getCellCount(); i++)
+		for (const cell of this.header.cells)
 		{
-			separator += " " + "-".repeat(this.header.getCellWidth(i)! - 2) + " |";
+			separator += " " + "-".repeat(cell.width - 2) + " |";
 		}
 		return header + "\n" + separator + "\n" + this.rows.map(x => x.toString()).join("\n");
 	}
 
 	// ITable
-	public getHeader(): ITableRow
-	{
-		return this.header;
-	}
-
-	public getRow(index: number): ITableRow|null
-	{
-		return this.rows[index];
-	}
-
-	public getRowCount(): number
-	{
-		return this.rows.length;
-	}
-
 	public formatWidths()
 	{
 		const widths: number[] = [];
@@ -174,43 +131,39 @@ export class Table implements ITable
 		{
 			const row = this.rows[y];
 
-			while (widths.length < row.getCellCount())
+			while (widths.length < row.cells.length)
 			{
 				widths.push(0);
 			}
 
-			for (let x = 0; x < row.getCellCount(); x++)
+			for (let x = 0; x < row.cells.length; x++)
 			{
-				widths[x] = Math.max(widths[x], Math.max(2 + row.getCell(x)!.length, row.getCellWidth(x)!));
+				widths[x] = Math.max(widths[x], Math.max(2 + row.cells[x].text.length, row.cells[x].width));
 			}
 		}
 
 		for (let y = 0; y < this.rows.length; y++)
 		{
 			const row = this.rows[y];
-			for (let x = 0; x < row.getCellCount(); x++)
+			for (let x = 0; x < row.cells.length; x++)
 			{
-				row.setCellWidth(x, widths[x]);
+				row.cells[x].width = widths[x];
 			}
 		}
 	}
-
-	// Table
-	public addRow(row: ITableRow)
-	{
-		this.rows.push(row);
-	}
 }
 
-export class Section extends ElementCollection implements ISection
+export class Section implements ISection
 {
-	private title: string;
-	private level: number;
+	public readonly type = "section";
+
+	public title: string;
+	public level: number;
+
+	public readonly elements: IElement[] = [];
 
 	public constructor(title: string, level: number)
 	{
-		super();
-
 		this.title = title;
 		this.level = level;
 	}
@@ -222,24 +175,13 @@ export class Section extends ElementCollection implements ISection
 
 		return title + "\n" + this.elements.map(x => x.toString()).join("\n");
 	}
-
-	// ISection
-	public getTitle(): string
-	{
-		return this.title;
-	}
-
-	public getLevel(): number
-	{
-		return this.level;
-	}
-
-	// Section
 }
 
 export class Lines implements ILines
 {
-	private lines: string[] = [];
+	public readonly type = "lines";
+
+	public readonly lines: string[] = [];
 
 	public constructor()
 	{
@@ -249,35 +191,18 @@ export class Lines implements ILines
 	{
 		return this.lines.join("\n");
 	}
-
-	// ILines
-	public getLine(index: number): string|null
-	{
-		return this.lines[index];
-	}
-
-	public getLineCount(): number
-	{
-		return this.lines.length;
-	}
-
-	// Lines
-	public addLine(line: string)
-	{
-		this.lines.push(line);
-	}
 }
 
-export class Document extends ElementCollection implements IDocument
+export class Document implements IDocument
 {
+	public readonly elements: IElement[] = [];
+
 	public constructor(document: string)
 	{
-		super();
-
 		const lines = document.split("\n");
 
 		let i = 0;
-		let section: ElementCollection = this;
+		let elementCollection: IElementCollection = this;
 		let linesElement: Lines|null = null;
 		while (i < lines.length)
 		{
@@ -292,8 +217,9 @@ export class Document extends ElementCollection implements IDocument
 				}
 
 				const title = lines[i].substring(level).trim();
-				section = new Section(title, level);
-				this.add(section);
+				const section = new Section(title, level);
+				this.elements.push(section);
+				elementCollection = section;
 				i++;
 			}
 			else if (lines[i].indexOf("|") != -1)
@@ -304,10 +230,10 @@ export class Document extends ElementCollection implements IDocument
 				i++;
 				i++;
 				const table = new Table(header);
-				section.add(table);
+				elementCollection.elements.push(table);
 				while (lines[i].indexOf("|") != -1)
 				{
-					table.addRow(new TableRow(lines[i]));
+					table.rows.push(new TableRow(lines[i]));
 					i++;
 				}
 			}
@@ -316,10 +242,10 @@ export class Document extends ElementCollection implements IDocument
 				if (linesElement == null)
 				{
 					linesElement = new Lines();
-					section.add(linesElement);
+					elementCollection.elements.push(linesElement);
 				}
 
-				linesElement.addLine(lines[i]);
+				linesElement.lines.push(lines[i]);
 				i++;
 			}
 		}
@@ -338,19 +264,19 @@ export class Document extends ElementCollection implements IDocument
 		const queue: IElementCollection[] = [];
 		queue.push(this);
 
-		let section: IElementCollection|undefined;
+		let elementCollection: IElementCollection|undefined;
 		// eslint-disable-next-line no-cond-assign
-		while (section = queue.pop())
+		while (elementCollection = queue.pop())
 		{
-			for (let i = 0; i < section.getCount(); i++)
+			for (const element of elementCollection.elements)
 			{
-				if (section.get(i) instanceof Section)
+				if (element instanceof Section)
 				{
-					queue.push(section.get(i) as ISection);
+					queue.push(element);
 				}
-				else if (section.get(i) instanceof Table)
+				else if (element instanceof Table)
 				{
-					tables.push(section.get(i) as ITable);
+					tables.push(element as ITable);
 				}
 			}
 		}

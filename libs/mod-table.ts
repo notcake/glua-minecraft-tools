@@ -1,8 +1,8 @@
-import { Document, ITable } from "./markdown";
+import { Document, ITable, TableCell } from "./markdown";
 
 export function isModTable(table: ITable): boolean
 {
-	const text = table.getHeader().getCell(0);
+	const text = table.header.cells[0].text;
 	return text != null ? text.trim().toLowerCase() == "mod name" : false;
 }
 
@@ -20,10 +20,10 @@ export class ModTable
 	{
 		this.table = table;
 
-		const header = table.getHeader();
-		for (let x = 2; x < header.getCellCount(); x++)
+		const header = table.header;
+		for (let x = 2; x < header.cells.length; x++)
 		{
-			this.versions[header.getCell(x)!.trim()] = x;
+			this.versions[header.cells[x].text.trim()] = x;
 		}
 	}
 
@@ -39,15 +39,15 @@ export class ModTable
 
 	public getModCount(): number
 	{
-		return this.table.getRowCount();
+		return this.table.rows.length;
 	}
 
 	public getModName(index: number): string|null
 	{
-		const row = this.table.getRow(index);
+		const row = this.table.rows[index];
 		if (row == null) { return null; }
 
-		let name = row.getCell(0)!.trim();
+		let name = row.cells[0].text.trim();
 		while (name.startsWith("+ "))
 		{
 			name = name.substring(2);
@@ -58,12 +58,12 @@ export class ModTable
 
 	public getModId(index: number): [string, string]|null
 	{
-		const row = this.table.getRow(index);
+		const row = this.table.rows[index];
 		if (row == null) { return null; }
 
-		for (let x = 0; x < row.getCellCount(); x++)
+		for (let x = 0; x < row.cells.length; x++)
 		{
-			const match = row.getCell(x)!.match(/\[[^\]]+\]\(([^)]+)\)/);
+			const match = row.cells[x].text.match(/\[[^\]]+\]\(([^)]+)\)/);
 			if (match == null) { continue; }
 
 			const url = match[1];
@@ -86,40 +86,35 @@ export class ModTable
 		const column = this.versions[version];
 		if (column == null) { return null; }
 
-		const row = this.table.getRow(index);
+		const row = this.table.rows[index];
 		if (row == null) { return null; }
 
-		const cell = row.getCell(column);
+		const cell = row.cells[column];
 		if (cell == null) { return null; }
 
-		const match = cell.match(/\[[^\]]+\]\(([^)]+)\)/);
+		const match = cell.text.match(/\[[^\]]+\]\(([^)]+)\)/);
 		return match ? match[1] : null;
 	}
 
 	public isModEnabled(index: number): boolean
 	{
-		const row = this.table.getRow(index);
+		const row = this.table.rows[index];
 		if (row == null) { return false; }
 
-		return row.getCell(1)!.indexOf("✔") != -1;
+		return row.cells[1].text.indexOf("✔") != -1;
 	}
 
 	public setModUrl(index: number, version: string, url: string | null): boolean
 	{
-		const row = this.table.getRow(index);
+		const row = this.table.rows[index];
 		if (row == null) { return false; }
 
 		const column = this.versions[version];
 		if (column == null) { return false; }
 
-		if (url == null)
-		{
-			row.setCell(column, " -");
-		}
-		else
-		{
-			row.setCell(column, " [" + version + "](" + url + ")");
-		}
+		const text = url == null ? " -" : (" [" + version + "](" + url + ")");
+		row.cells[column] = row.cells[column] || new TableCell(text);
+		row.cells[column].text = text;
 
 		return true;
 	}
