@@ -1,7 +1,6 @@
 {
   "name": "glua-minecraft-tools",
   "dependencies": {
-    "@types/node": "^10.12.1",
     "child-process-promise": "^2.2.1",
     "express": "^4.16.4",
     "fake-useragent": "^1.0.1",
@@ -10,6 +9,7 @@
     "request-promise": "^4.2.2"
   },
   "devDependencies": {
+    "@types/node": "^10.12.1",
     "@types/request": "^2.48.0",
     "@types/request-promise": "^4.1.42",
     "typescript": "^3.1.5"
