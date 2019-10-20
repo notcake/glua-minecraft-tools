@@ -8,6 +8,10 @@ export interface ITable
 
 	readonly header: ITableRow;
 
+	addColumn(headerText: string, fillText?: string|null, width?: number|null);
+	insertColumn(index: number, headerText: string, fillText?: string|null, width?: number|null);
+	removeColumn(index: number);
+
 	formatWidths();
 }
 
@@ -124,6 +128,29 @@ export class Table implements ITable
 	}
 
 	// ITable
+	public addColumn(headerText: string, fillText: string|null = null, width: number|null = null)
+	{
+		this.insertColumn(this.header.cells.length, headerText, fillText, width);
+	}
+
+	public insertColumn(index: number, headerText: string, fillText: string|null = null, width: number|null = null)
+	{
+		this.header.cells.splice(index, 0, new TableCell(headerText, width));
+		for (const row of this.rows)
+		{
+			row.cells.splice(index, 0, new TableCell(fillText || "", width));
+		}
+	}
+
+	public removeColumn(index: number)
+	{
+		this.header.cells.splice(index, 1);
+		for (const row of this.rows)
+		{
+			row.cells.splice(index, 1);
+		}
+	}
+
 	public formatWidths()
 	{
 		const widths: number[] = [];

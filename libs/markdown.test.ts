@@ -24,6 +24,58 @@ test("markdown table parsing", () =>
 	expect(table.rows[0].cells[2].text).toBe(" f ");
 });
 
+test("markdown table column addition", () =>
+{
+	const document = Document.fromString(
+		"| a | b |\n" +
+		"|---|---|\n" +
+		"| d | e |"
+	);
+	expect(document.elements.length).toBe(1);
+
+	const table = document.elements[0];
+	expect(table.type).toBe("table");
+	if (table.type != "table") { return; }
+
+	table.addColumn(" c ", " f ");
+
+	expect(table.header.cells.length).toBe(3);
+	expect(table.header.cells[0].text).toBe(" a ");
+	expect(table.header.cells[1].text).toBe(" b ");
+	expect(table.header.cells[2].text).toBe(" c ");
+
+	expect(table.rows.length).toBe(1);
+	expect(table.rows[0].cells.length).toBe(3);
+	expect(table.rows[0].cells[0].text).toBe(" d ");
+	expect(table.rows[0].cells[1].text).toBe(" e ");
+	expect(table.rows[0].cells[2].text).toBe(" f ");
+});
+
+test("markdown table column removal", () =>
+{
+	const document = Document.fromString(
+		"| a | b | c |\n" +
+		"|---|---|---|\n" +
+		"| d | e | f |"
+	);
+	expect(document.elements.length).toBe(1);
+
+	const table = document.elements[0];
+	expect(table.type).toBe("table");
+	if (table.type != "table") { return; }
+
+	table.removeColumn(1);
+
+	expect(table.header.cells.length).toBe(2);
+	expect(table.header.cells[0].text).toBe(" a ");
+	expect(table.header.cells[1].text).toBe(" c ");
+
+	expect(table.rows.length).toBe(1);
+	expect(table.rows[0].cells.length).toBe(2);
+	expect(table.rows[0].cells[0].text).toBe(" d ");
+	expect(table.rows[0].cells[1].text).toBe(" f ");
+});
+
 test("markdown section parsing", () =>
 {
 	const document = Document.fromString(
