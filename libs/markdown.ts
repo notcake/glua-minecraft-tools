@@ -202,6 +202,7 @@ export class Document implements IDocument
 		const lines = document.split("\n");
 
 		let i = 0;
+		const sectionStack: ISection[] = [];
 		let elementCollection: IElementCollection = this;
 		let linesElement: Lines|null = null;
 		while (i < lines.length)
@@ -218,7 +219,15 @@ export class Document implements IDocument
 
 				const title = lines[i].substring(level).trim();
 				const section = new Section(title, level);
-				this.elements.push(section);
+
+				while (sectionStack.length > 0 &&
+				       sectionStack[sectionStack.length - 1].level >= section.level)
+				{
+					sectionStack.pop();
+				}
+				elementCollection = sectionStack.length > 0 ? sectionStack[sectionStack.length - 1] : this;
+				sectionStack.push(section);
+				elementCollection.elements.push(section);
 				elementCollection = section;
 				i++;
 			}
