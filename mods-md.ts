@@ -4,7 +4,7 @@ import { Document } from "./libs/markdown";
 import { getModTables, ModTable } from "./libs/mod-table";
 import { packModId, parseArguments, readUri } from "./libs/utils";
 
-async function processTable(modTable: ModTable): Promise<void>
+async function updateMods(modTable: ModTable): Promise<void>
 {
 	const concurrency = new ConcurrentManager(15);
 
@@ -70,13 +70,18 @@ async function processTable(modTable: ModTable): Promise<void>
 async function main(argc: number, argv: string[])
 {
 	const [fixedArguments, ] = parseArguments(argc, argv);
-	if (fixedArguments.length != 1)
+	if (fixedArguments.length < 2 ||
+            (!(fixedArguments[0] == "update" && fixedArguments.length == 2) &&
+             !(fixedArguments[0] == "add-version" && fixedArguments.length == 3) &&
+             !(fixedArguments[0] == "remove-version" && fixedArguments.length == 3)))
 	{
-		console.error("Usage: ts-node update-mods-md <mods.md file or url> > output.md");
+		console.error("Usage: ts-node mods-md update <mods.md file or url> > output.md");
+		console.error("       ts-node mods-md add-version <mods.md file or url> <minecraft version> > output.md");
+		console.error("       ts-node mods-md remove-version <mods.md file or url> <minecraft version> > output.md");
 		process.exit(1);
 	}
 
-	const markdownUri = fixedArguments[0];
+	const markdownUri = fixedArguments[1];
 	const data = await readUri(markdownUri);
 	if (data == null)
 	{
@@ -87,9 +92,36 @@ async function main(argc: number, argv: string[])
 
 
 	const document = Document.fromString(data);
-	for (const table of getModTables(document))
+
+	const action = fixedArguments[0];
+	switch (action)
 	{
-		await processTable(new ModTable(table));
+		case "update":
+			for (const table of getModTables(document))
+			{
+				await updateMods(new ModTable(table));
+			}
+			break;
+		case "add-version":
+		{
+			const version = fixedArguments[2];
+			for (const table of getModTables(document))
+			{
+				const modTable = new ModTable(table);
+				modTable.addVersion(version);
+			}
+			break;
+		}
+		case "remove-version":
+		{
+			const version = fixedArguments[2];
+			for (const table of getModTables(document))
+			{
+				const modTable = new ModTable(table);
+				modTable.removeVersion(version);
+			}
+			break;
+		}
 	}
 
 	let markdown = document.toString();

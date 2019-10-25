@@ -27,6 +27,19 @@ export class ModTable
 		}
 	}
 
+	public addVersion(version: string)
+	{
+		if (version in this.versions) { return; }
+
+		this.versions[version] = this.table.header.cells.length;
+		this.table.addColumn(" " + version + " ", " - ");
+	}
+
+	public containsVersion(version: string): boolean
+	{
+		return version in this.versions;
+	}
+
 	public getTable(): ITable
 	{
 		return this.table;
@@ -104,6 +117,23 @@ export class ModTable
 		return row.cells[1].text.indexOf("✔") != -1;
 	}
 
+	public removeVersion(version: string)
+	{
+		if (!(version in this.versions)) { return; }
+
+		const index = this.versions[version];
+		this.table.removeColumn(index);
+
+		delete this.versions[version];
+		for (const version in this.versions)
+		{
+			if (this.versions[version] > index)
+			{
+				this.versions[version]--;
+			}
+		}
+	}
+
 	public setModUrl(index: number, version: string, url: string | null): boolean
 	{
 		const row = this.table.rows[index];
@@ -112,7 +142,7 @@ export class ModTable
 		const column = this.versions[version];
 		if (column == null) { return false; }
 
-		const text = url == null ? " -" : (" [" + version + "](" + url + ")");
+		const text = url == null ? " - " : (" [" + version + "](" + url + ") ");
 		row.cells[column] = row.cells[column] || new TableCell(text);
 		row.cells[column].text = text;
 
