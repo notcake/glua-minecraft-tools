@@ -5,7 +5,6 @@ const requestProgress = require("request-progress");
 
 import { ITable } from "./markdown";
 import { ModManifest } from "./mod-manifest";
-import { getCurseforgeFileId } from "./curseforge";
 import { ModTable } from "./mod-table";
 import { sha256, packModId, sanitizeFileName } from "./utils";
 import { ConcurrentManager } from "./concurrency";
@@ -95,59 +94,38 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 			progress = " ".repeat(Math.max(0, modCount.toString().length - progress.length)) + progress;
 			progress = "[" + progress + "/" + modCount.toString() + "]";
 
-			const [namespace, id] = modTable.getModId(i)!;
+			const [modRepository, id] = modTable.getModId(i)!;
 
 			// Check if enabled
 			if (!modTable.isModEnabled(i))
 			{
-				log(progress + "   " + packModId(namespace, id) + ": Skipping.");
+				log(progress + "   " + packModId(modRepository.name, id) + ": Skipping.");
 				continue;
 			}
 
-			enabledMods[packModId(namespace, id)] = true;
+			enabledMods[packModId(modRepository.name, id)] = true;
 
 			// Get download URL
-			const url = modTable.getModUrl(i, minecraftVersion);
-			if (url == null)
+			const release = modTable.getModReleaseId(i, minecraftVersion);
+			if (release == null)
 			{
-				log(progress + " ! " + packModId(namespace, id) + ": No download URL for Minecraft " + minecraftVersion + " found!");
+				log(progress + " ! " + packModId(modRepository.name, id) + ": No download URL for Minecraft " + minecraftVersion + " found!");
 				continue;
 			}
 
-			let downloadUrl: string|null = null;
-			let version: string|null = null;
-			switch (namespace)
-			{
-				case "curseforge":
-					downloadUrl = url.replace(/\/files\/([0-9]+)\/?/, "/download/$1/file");
-					version = getCurseforgeFileId(url);
-					break;
-				case "curseforge-legacy":
-				{
-					const updatedUrl = url.replace(/https?:\/\/minecraft\.curseforge\.com\/projects\//, "https://www.curseforge.com/minecraft/mc-mods/");
-					downloadUrl = updatedUrl.replace(/\/files\/([0-9]+)\/?/, "/download/$1/file");
-					version = getCurseforgeFileId(url);
-					break;
-				}
-				case "url":
-					downloadUrl = url;
-					version = url;
-					break;
-				default:
-					log(progress + " ! " + packModId(namespace, id) + ": Cannot derive download URL!");
-					break;
-			}
+			const [modRepositoryOverride, idOverride, releaseId] = release;
+			const downloadUrl = await modRepositoryOverride.getModReleaseDownloadUrl(idOverride, releaseId);
 
 			// Bail if no download URL found
-			if (downloadUrl == null || version == null)
+			if (downloadUrl == null)
 			{
-				log(progress + " ! " + packModId(namespace, id) + ": Unable to download!");
+				log(progress + " ! " + packModId(modRepository.name, id) + ": Unable to download!");
 				continue;
 			}
 
 			// Download new version
-			const existingFileName = manifest.getModFileName(namespace, id);
-			if (manifest.getModVersion(namespace, id) != version ||
+			const existingFileName = manifest.getModFileName(modRepository.name, id);
+			if (manifest.getModVersion(modRepository.name, id) != releaseId ||
 			    (existingFileName != null && !fs.existsSync(modDirectory + "/" + existingFileName)))
 			{
 				// Remove existing jar
@@ -156,7 +134,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 					try
 					{
 						fs.unlinkSync(modDirectory + "/" + existingFileName);
-						log(progress + " - " + packModId(namespace, id) + " " + existingFileName);
+						log(progress + " - " + packModId(modRepository.name, id) + " " + existingFileName);
 					}
 					catch (e)
 					{
@@ -169,23 +147,23 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 				{
 					try
 					{
-						let [data, fileName] = await download(downloadUrl as string);
+						let [data, fileName] = await download(downloadUrl);
 						fileName = sanitizeFileName(fileName);
 						fs.writeFileSync(modDirectory + "/" + fileName, data);
-						log(progress + " + " + packModId(namespace, id) + " " + fileName);
+						log(progress + " + " + packModId(modRepository.name, id) + " " + fileName);
 
-						manifest.updateMod(namespace, id, fileName, downloadUrl as string, version as string, sha256(data));
+						manifest.updateMod(modRepository.name, id, fileName, downloadUrl, releaseId, sha256(data));
 						manifest.save(manifestPath);
 					}
 					catch (err)
 					{
 						if (err == "Non-200 status code returned")
 						{
-							log(progress + " + " + packModId(namespace, id) + " failed to download. Has the file been deleted from the source?");
+							log(progress + " + " + packModId(modRepository.name, id) + " failed to download. Has the file been deleted from the source?");
 						}
 						else
 						{
-							log(progress + " + " + packModId(namespace, id) + " failed to download. " + err.toString());
+							log(progress + " + " + packModId(modRepository.name, id) + " failed to download. " + err.toString());
 						}
 					}
 				}
@@ -193,7 +171,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 			}
 			else
 			{
-				log(progress + "   " + packModId(namespace, id) + " " + existingFileName);
+				log(progress + "   " + packModId(modRepository.name, id) + " " + existingFileName);
 			}
 		}
 	}

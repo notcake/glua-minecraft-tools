@@ -1,4 +1,8 @@
 import { Document, ITable, TableCell } from "./markdown";
+import { IModRepository } from "./imodrepository";
+import { ModRepositories } from "./modrepositories";
+
+const modRepositories = new ModRepositories();
 
 export function isModTable(table: ITable): boolean
 {
@@ -69,7 +73,7 @@ export class ModTable
 		return name;
 	}
 
-	public getModId(index: number): [string, string]|null
+	public getModId(index: number): [IModRepository, string]|null
 	{
 		const row = this.table.rows[index];
 		if (row == null) { return null; }
@@ -81,20 +85,25 @@ export class ModTable
 
 			const url = match[1];
 
-			const curseforgeMatchOld = url.match(/https?:\/\/minecraft.curseforge.com\/projects\/([^/]+)\//);
-			if (curseforgeMatchOld != null) { return ["curseforge-legacy", curseforgeMatchOld[1]]; }
-
-			const curseforgeMatchWWW = url.match(/https?:\/\/www.curseforge.com\/minecraft\/mc-mods\/([^/]+)\//);
-			if (curseforgeMatchWWW != null) { return ["curseforge", curseforgeMatchWWW[1]]; }
-
-			const curseforgeMatch = url.match(/https?:\/\/curseforge.com\/minecraft\/mc-mods\/([^/]+)\//);
-			if (curseforgeMatch != null) { return ["curseforge", curseforgeMatch[1]]; }
+			const result = modRepositories.parseModUrl(url);
+			if (result != null && result[0].name != "url")
+			{
+				return result;
+			}
 		}
 
-		return ["url", this.getModName(index)!];
+		return [modRepositories.get("url")!, this.getModName(index)!];
 	}
 
-	public getModUrl(index: number, version: string): string|null
+	public getModReleaseId(index: number, version: string): [IModRepository, string, string]|null
+	{
+		const url = this.getModReleaseUrl(index, version);
+		if (url == null) { return null; }
+
+		return modRepositories.parseModReleaseUrl(url);
+	}
+
+	public getModReleaseUrl(index: number, version: string): string|null
 	{
 		const column = this.versions[version];
 		if (column == null) { return null; }
@@ -134,7 +143,13 @@ export class ModTable
 		}
 	}
 
-	public setModUrl(index: number, version: string, url: string | null): boolean
+	public setModReleaseId(index: number, version: string, modRepository: IModRepository, id: string, releaseId: string): boolean
+	{
+		const url = modRepository.getModReleaseUrl(id, releaseId);
+		return this.setModReleaseUrl(index, version, url);
+	}
+
+	public setModReleaseUrl(index: number, version: string, url: string | null): boolean
 	{
 		const row = this.table.rows[index];
 		if (row == null) { return false; }

@@ -1,5 +1,4 @@
 import { ConcurrentManager } from "./libs/concurrency";
-import { getCurseforgeUrls, getCurseforgeFileId } from "./libs/curseforge";
 import { Document } from "./libs/markdown";
 import { getModTables, ModTable } from "./libs/mod-table";
 import { packModId, parseArguments, readUri } from "./libs/utils";
@@ -12,53 +11,54 @@ async function updateMods(modTable: ModTable): Promise<void>
 
 	for (let i = 0; i < modTable.getModCount(); i++)
 	{
-		const [namespace, id] = modTable.getModId(i)!;
+		const [modRepository, id] = modTable.getModId(i)!;
 		const modName = modTable.getModName(i)!;
-		switch (namespace)
+		if (modRepository.name == "url")
 		{
-			case "curseforge":
-			case "curseforge-legacy":
-				concurrency.queueThread(async () =>
+			console.error(modName + ": Skipping raw URLs.");
+		}
+		else
+		{
+			concurrency.queueThread(async () =>
+			{
+				const output: string[] = [];
+				output.push("Processing " + packModId(modRepository.name, id) + "...");
+				for (const version of versions)
 				{
-					const newUrls = await getCurseforgeUrls(id, versions);
+					const previousUrl = modTable.getModReleaseUrl(i, version);
+					const previousRelease = modTable.getModReleaseId(i, version);
+					const [modRepositoryOverride, idOverride, previousReleaseId] = previousRelease ? previousRelease : [modRepository, id, null];
+					const nextReleaseId = await modRepositoryOverride.getLatestModReleaseId(idOverride, version);
+					const nextUrl = nextReleaseId != null ? modRepositoryOverride.getModReleaseUrl(idOverride, nextReleaseId) : null;
 
-					console.error("Processing " + packModId(namespace, id) + "...");
-					for (let j = 0; j < versions.length; j++)
+					if (previousUrl != nextUrl)
 					{
-						const version = versions[j];
-
-						const previousUrl = modTable.getModUrl(i, version);
-						const nextUrl	  = newUrls[version];
-
-						if (previousUrl != nextUrl)
+						let nextAfterPrevious = true;
+						if (modRepositoryOverride.name == "curseforge")
 						{
-							const previous = previousUrl ? getCurseforgeFileId(previousUrl) : null;
-							const next     = nextUrl     ? getCurseforgeFileId(nextUrl)     : null;
-							if (next != null && (previous ? parseInt(previous) : 0) <= parseInt(next))
-							{
-								console.error(" " + version + ": " + previous + " -> " + next);
-								modTable.setModUrl(i, version, nextUrl);
-							}
-							else
-							{
-								modTable.setModUrl(i, version, null);
-								console.error(" !!! " + version + ": " + previous + " -> " + next);
-							}
+							nextAfterPrevious = (previousReleaseId != null ? parseInt(previousReleaseId) : 0) <= (nextReleaseId != null ? parseInt(nextReleaseId) : 0);
 						}
-						else if (nextUrl == null)
+
+						if (nextReleaseId != null && nextAfterPrevious)
 						{
-							modTable.setModUrl(i, version, null);
+							if (previousReleaseId != nextReleaseId)
+							{
+								// Note that the outer check is for url equality, not release ID equality
+								output.push(" " + version + ": " + previousReleaseId + " -> " + nextReleaseId);
+							}
+							modTable.setModReleaseUrl(i, version, nextUrl);
+						}
+						else
+						{
+							// The "latest" release is older than the existing release.
+							// Do not update the table.
+							output.push(" !!! " + version + ": " + previousReleaseId + " -> " + nextReleaseId + ", rejected!");
 						}
 					}
 				}
-				);
-				break;
-			case "url":
-				console.error(modName + ": Skipping raw URLs.");
-				break;
-			default:
-				console.error(modName + ": Unknown id " + packModId(namespace, id) + ".");
-				break;
+
+				console.error(output.join("\n"));
+			});
 		}
 	}
 
@@ -127,6 +127,7 @@ async function main(argc: number, argv: string[])
 	let markdown = document.toString();
 	if (markdown.endsWith("\n"))
 	{
+		// Strip trailing line break because console.log will re-add it
 		markdown = markdown.substring(0, markdown.length - 1);
 	}
 	console.log(markdown);
