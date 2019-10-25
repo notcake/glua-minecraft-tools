@@ -98,7 +98,7 @@ export class TableRow implements ITableRow
 		let row = "|";
 		for (let i = 0; i < this.cells.length; i++)
 		{
-			row += this.cells[i].text + " ".repeat(Math.max(0, this.cells[i].width - 2 - this.cells[i].text.length)) + "|";
+			row += this.cells[i].text + " ".repeat(Math.max(0, this.cells[i].width - this.cells[i].text.length)) + "|";
 		}
 		return row;
 	}
@@ -135,10 +135,13 @@ export class Table implements ITable
 
 	public insertColumn(index: number, headerText: string, fillText: string|null = null, width: number|null = null)
 	{
+		fillText = fillText || "";
+		width = width != null ? width : Math.max(headerText.length, fillText.length);
+
 		this.header.cells.splice(index, 0, new TableCell(headerText, width));
 		for (const row of this.rows)
 		{
-			row.cells.splice(index, 0, new TableCell(fillText || "", width));
+			row.cells.splice(index, 0, new TableCell(fillText, width));
 		}
 	}
 
