@@ -125,7 +125,7 @@ export class Modpack
 				if (this.blobs[sha256] == null)
 				{
 					const zipPath = tempDirectory + "/" + sha256 + ".zip";
-					await exec("zip", [zipPath, "mods/" + fileName], { cwd: this.serverDirectory });
+					await exec("zip", [zipPath, "--strip-extra", "mods/" + fileName], { cwd: this.serverDirectory });
 
 					blobs[sha256] = fs.readFileSync(zipPath);
 					fs.unlinkSync(zipPath);
@@ -172,14 +172,17 @@ export class Modpack
 				javaArguments += " -Dfml.readTimeout=120";
 				versionJsonLines.splice(minecraftArgumentsIndex + 1, 0, "  \"javaArguments\": \"" + javaArguments + "\",");
 				fs.writeFileSync(tempDirectory + "/bin/version.json", versionJsonLines.join("\n"));
-				await exec("zip", ["modpack.jar", "--delete", "version.json"], { cwd: tempDirectory + "/bin" });
-				await exec("zip", ["modpack.jar", "version.json"], { cwd: tempDirectory + "/bin" });
+				fs.utimesSync(tempDirectory + "/bin/version.json", 0, 0);
+				await exec("zip", ["modpack.jar", "--strip-extra", "--delete", "version.json"], { cwd: tempDirectory + "/bin" });
+				await exec("zip", ["modpack.jar", "--strip-extra", "version.json"], { cwd: tempDirectory + "/bin" });
 
 				// Delete META-INF
-				await exec("zip", ["modpack.jar", "--delete", "META-INF/*"], { cwd: tempDirectory + "/bin" });
+				await exec("zip", ["modpack.jar", "--strip-extra", "--delete", "META-INF/*"], { cwd: tempDirectory + "/bin" });
+				fs.utimesSync(tempDirectory + "/bin/modpack.jar", 0, 0);
+				fs.utimesSync(tempDirectory + "/bin", 0, 0);
 
 				const zipPath = tempDirectory + "/forge.zip";
-				await exec("zip", ["-r", zipPath, "bin/"], { cwd: tempDirectory });
+				await exec("zip", [zipPath, "--strip-extra", "-r", "bin/"], { cwd: tempDirectory });
 
 				fs.unlinkSync(tempDirectory + "/bin/modpack.jar");
 				fs.unlinkSync(tempDirectory + "/bin/version.json");
@@ -214,12 +217,13 @@ export class Modpack
 				{
 					await exec("rm", ["-rf", tempDirectory + "/config/shadowfacts/DiscordChat"]);
 				}
+				await exec("find", [tempDirectory + "/config", "-exec", "touch", "-t", "197001010000", "{}", ";"]);
 
 				const zipPath = tempDirectory + "/config.zip";
-				await exec("zip", ["-r", zipPath, "config"], { cwd: tempDirectory });
+				await exec("zip", [zipPath, "--strip-extra", "-r", "config"], { cwd: tempDirectory });
 				if (fs.existsSync(this.serverDirectory + "/servers.dat"))
 				{
-					await exec("zip", [zipPath, "servers.dat"], { cwd: this.serverDirectory });
+					await exec("zip", [zipPath, "--strip-extra", "servers.dat"], { cwd: this.serverDirectory });
 				}
 				await exec("rm", ["-rf", tempDirectory + "/config"]);
 
