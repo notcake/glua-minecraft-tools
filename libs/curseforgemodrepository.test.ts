@@ -73,4 +73,8 @@ test("getSlugId", async () =>
 {
 	const modRepository = new CurseforgeModRepository();
 	expect(await modRepository.getSlugId("mekanism")).toBe("268560");
+
+	// The Curseforge Widget API 500s on this
+	// Check that the fallback addon search method work for this case
+	expect(await modRepository.getSlugId("pet-craft")).toBe("333381");
 });

@@ -147,15 +147,30 @@ export class CurseforgeModRepository implements IModRepository
 			{
 				console.error(`GET ${url}`);
 			}
-			const json = JSON.parse(await request.get(url));
-			const id = json.id.toString();
-			this.slugIds.set(slug, id);
+			let json: string|null = null;
+			try { json = await request.get(url); }
+			catch {}
 
-			const newSlug = (await this.get(`/addon/${id}`)).slug;
-			if (slug != newSlug)
+			if (json != null)
 			{
-				this.slugReplacements.set(slug, newSlug);
-				console.error(`!!! Slug ${slug} has been renamed to ${newSlug}!`);
+				const id = JSON.parse(json).id.toString();
+				this.slugIds.set(slug, id);
+
+				const newSlug = (await this.get(`/addon/${id}`)).slug;
+				if (slug != newSlug)
+				{
+					this.slugReplacements.set(slug, newSlug);
+					console.error(`!!! Slug ${slug} has been renamed to ${newSlug}!`);
+				}
+			}
+			else
+			{
+				// Fallback to addon search, which is less reliable
+				const json = await this.get(`/addon/search?gameId=${await this.getMinecraftGameId()}&searchFilter=${encodeURIComponent(slug)}`);
+				for (const result of json)
+				{
+					this.slugIds.set(result.slug, result.id.toString());
+				}
 			}
 
 			if (!this.slugIds.has(slug))
