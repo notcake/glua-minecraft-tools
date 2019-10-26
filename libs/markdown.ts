@@ -168,7 +168,7 @@ export class Table implements ITable
 
 			for (let x = 0; x < row.cells.length; x++)
 			{
-				widths[x] = Math.max(widths[x], Math.max(2 + row.cells[x].text.length, row.cells[x].width));
+				widths[x] = Math.max(widths[x], Math.max(row.cells[x].text.length, row.cells[x].width));
 			}
 		}
 
