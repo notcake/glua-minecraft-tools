@@ -158,7 +158,10 @@ export class ModTable
 		if (column == null) { return false; }
 
 		const text = url == null ? " - " : (" [" + version + "](" + url + ") ");
-		row.cells[column] = row.cells[column] || new TableCell(text);
+		while (row.cells.length <= column)
+		{
+			row.cells.push(new TableCell(" - "));
+		}
 		row.cells[column].text = text;
 
 		return true;
