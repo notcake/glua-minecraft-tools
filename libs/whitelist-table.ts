@@ -21,6 +21,7 @@ export class WhitelistTable
 			const approved = row.cells[2].text.indexOf("✔") != -1;
 
 			if (name == "_Name_") { continue; }
+			if (name == "_Minecraft Name_") { continue; }
 
 			this.names[name] = approved;
 		}
@@ -44,7 +45,8 @@ export class WhitelistTable
 		for (const table of document.getTables())
 		{
 			if (table.header.cells.length >= 3 &&
-			    table.header.cells[0].text.trim().toLowerCase() == "name")
+			    (table.header.cells[0].text.trim().toLowerCase() == "name" ||
+			     table.header.cells[0].text.trim().toLowerCase() == "minecraft name"))
 			{
 				return new WhitelistTable(table);
 			}
