@@ -1,6 +1,7 @@
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
+import * as path from "path";
 
 import * as https from "https";
 
@@ -51,11 +52,11 @@ export class Modpack
 			name:           this.id,
 			display_name:   this.name,
 			url:            null,
-			icon:           "https://i.imgur.com/xUNvhPp.png",
+			icon:           this.baseUrl + "resources/icon.png",
 			icon_md5:       null,
-			logo:           "https://i.imgur.com/YgWjGQV.png",
+			logo:           this.baseUrl + "resources/logo.png",
 			logo_md5:       null,
-			background:     "https://i.imgur.com/Qg9LfeK.png",
+			background:     this.baseUrl + "resources/background.png",
 			background_md5: null,
 			recommended:    this.version,
 			latest:         this.version,
@@ -287,6 +288,7 @@ async function main(argc: number, argv: string[])
 	}
 	);
 
+	app.use("/resources", express.static(path.join(__dirname, "resources")));
 	app.get("/api/", (request, response) =>
 	{
 		response.json({
