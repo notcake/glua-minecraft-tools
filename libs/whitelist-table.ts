@@ -13,7 +13,7 @@ export class WhitelistTable
 		for (const row of this.table.rows)
 		{
 			let name = row.cells[0].text.trim();
-			name = name.replace("\\", "");
+			name = name.replace(/\\/g, "");
 			while (name.startsWith("+ "))
 			{
 				name = name.substring(2);
@@ -55,4 +55,3 @@ export class WhitelistTable
 		return null;
 	}
 }
-
