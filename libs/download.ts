@@ -143,7 +143,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 				}
 
 				// Download new jar
-				concurrency.queueThread(async () =>
+				concurrency.queueTask(async () =>
 				{
 					try
 					{
@@ -176,7 +176,7 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 		}
 	}
 
-	await concurrency.defer();
+	await concurrency.join();
 
 	// Remove disabled mods
 	for (const [namespace, id] of manifest.getMods())

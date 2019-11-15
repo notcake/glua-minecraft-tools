@@ -1,116 +1,61 @@
-export type Thread<T> = () => Promise<T>;
-
-export interface IQueuedThread<T> {
-	thread: Thread<T>;
-	entryOK: (val: T) => void;
-	entryFail: (err?: string) => void;
-	promise?: Promise<T>;
-}
-
 export class ConcurrentManager
 {
-	queuedThreads: IQueuedThread<any>[] = [];
-	activeThreads: IQueuedThread<any>[] = [];
+	public readonly maxConcurrency: number;
 
-	tickCallbacks: Function[] = [];
+	private readonly queuedTasks: (() => Promise<void>)[] = [];
+	private activeTasks: number = 0;
 
-	constructor(public maxThreads = 10)
+	private completion: Promise<void> = (async () => {})();
+	private resolveCompletion: () => void = () => {};
+
+	public constructor(maxConcurrency: number = 10)
 	{
-
+		this.maxConcurrency = maxConcurrency;
 	}
 
-	tickQueue()
+	public queueTask<T>(task: () => Promise<T>): Promise<T>
 	{
-		const openSlots = Math.max(0, this.maxThreads - this.activeThreads.length);
-
-		for (let i = 0; i < openSlots; i++)
+		return new Promise<T>((resolve, reject) =>
 		{
-			if (this.queuedThreads.length > 0)
+			if (this.queuedTasks.length == 0)
 			{
-				this.startThread(this.queuedThreads.splice(0, 1)[0]);
-			}
-			else
-			{
-				break;
-			}
-		}
-
-		for (const cb of this.tickCallbacks)
-		{
-			cb();
-		}
-	}
-
-	startThread(queued: IQueuedThread<any>)
-	{
-		if (this.activeThreads.length < this.maxThreads)
-		{
-			const idx = this.queuedThreads.indexOf(queued);
-			if (idx !== -1)
-			{
-				this.queuedThreads.splice(idx, 1);
-			}
-			this.activeThreads.push(queued);
-
-			queued.thread().then((val) =>
-			{
-				queued.entryOK(val);
-				this.closeThread(queued);
-			}).catch((e) =>
-			{
-				queued.entryFail(e);
-				this.closeThread(queued);
-				throw e;
-			});
-		}
-	}
-
-	closeThread(queued: IQueuedThread<any>)
-	{
-		const idx = this.activeThreads.indexOf(queued);
-		if (idx !== -1)
-		{
-			this.activeThreads.splice(idx, 1);
-		}
-		this.tickQueue();
-	}
-
-	queueThread<T>(thread: Thread<T>)
-	{
-		return new Promise<T>((res, rej) =>
-		{
-			this.queuedThreads.push({
-				thread,
-				entryOK: res,
-				entryFail: rej,
-			});
-			this.tickQueue();
-		});
-	}
-
-	defer()
-	{
-		return new Promise((res) =>
-		{
-			// wait for all threads to complete
-			const cb = () =>
-			{
-				if (this.queuedThreads.length === 0)
+				this.completion = new Promise<void>((resolve) =>
 				{
-					if (this.activeThreads.length === 0)
+					this.resolveCompletion = resolve;
+				});
+			}
+
+			this.queuedTasks.push(async () =>
+			{
+				const promise = task();
+				promise.then(resolve);
+				promise.catch(reject);
+				try { await promise; }
+				catch (e) {}
+			});
+
+			if (this.activeTasks < this.maxConcurrency)
+			{
+				this.activeTasks++;
+				(async () =>
+				{
+					while (this.queuedTasks.length > 0)
 					{
-						const idx = this.tickCallbacks.indexOf(cb);
-						if (idx !== -1)
-						{
-							this.tickCallbacks.splice(idx, 1);
-						}
-
-						res();
+						const task = this.queuedTasks.shift()!;
+						await task();
 					}
-				}
-			};
-
-			this.tickCallbacks.push(cb);
+					this.activeTasks--;
+					if (this.activeTasks == 0)
+					{
+						this.resolveCompletion();
+					}
+				})();
+			}
 		});
+	}
+
+	public join(): Promise<void>
+	{
+		return this.completion;
 	}
 }

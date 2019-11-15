@@ -19,7 +19,7 @@ async function updateMods(modTable: ModTable): Promise<void>
 		}
 		else
 		{
-			concurrency.queueThread(async () =>
+			concurrency.queueTask(async () =>
 			{
 				const output: string[] = [];
 				output.push("Processing " + packModId(modRepository.name, id) + "...");
@@ -62,7 +62,7 @@ async function updateMods(modTable: ModTable): Promise<void>
 		}
 	}
 
-	await concurrency.defer();
+	await concurrency.join();
 
 	modTable.getTable().formatWidths();
 }
