@@ -214,6 +214,13 @@ export class Modpack
 					await exec("rm", ["-f", tempDirectory + "/config/fmlModState.properties"]);
 				}
 
+				// Exclude config/enderio/recipes since Ender IO makes them all read-only
+				if (fs.existsSync(tempDirectory + "/config/enderio/recipes"))
+				{
+					await exec("rm", ["-rf", tempDirectory + "/config/enderio/recipes"]);
+				}
+
+				// Exclude DiscordChat credentials
 				if (fs.existsSync(tempDirectory + "/config/shadowfacts/DiscordChat"))
 				{
 					await exec("rm", ["-rf", tempDirectory + "/config/shadowfacts/DiscordChat"]);
