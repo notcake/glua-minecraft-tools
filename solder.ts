@@ -9,7 +9,7 @@ const express = require("express");
 
 import { getInstalledForgeFileName, getInstalledMinecraftVersion } from "./libs/forgemod";
 import { ModManifest } from "./libs/mod-manifest";
-import { exec, md5, sha256, parseArguments } from "./libs/utils";
+import { exec, md5, sha256, parseArguments, sanitizeFileName } from "./libs/utils";
 
 export type ModEntry = {
 	name:     string;
@@ -137,7 +137,7 @@ export class Modpack
 				}
 
 				mods.push({
-					name:     namespace + "_" + id,
+					name:     namespace + "_" + sanitizeFileName(id),
 					version:  sha256.substring(0, 16),
 					md5:      md5(blobs[sha256]),
 					filesize: blobs[sha256].length.toString(),

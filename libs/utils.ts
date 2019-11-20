@@ -87,7 +87,7 @@ export async function readUri(uri: string): Promise<string|null>
 
 export function sanitizeFileName(fileName: string): string
 {
-	return fileName.replace("/", "_");
+	return fileName.replace(/[<>:"/\\|?*]/g, "_");
 }
 
 export function toSet(strings: string[]): { [_: string]: true }
