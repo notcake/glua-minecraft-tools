@@ -216,7 +216,7 @@ async function main(argc: number, argv: string[])
 		console.log("Properties: Setting " + key + " to " + value);
 		serverPropertiesNeedsSaving = true;
 	}
-	set("max-tick-time", "120000");
+	set("max-tick-time", "300000");
 	set("allow-flight", "true");
 	set("level-type", "BIOMESOP");
 	set("max-players", "30");
