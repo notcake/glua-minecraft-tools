@@ -26,7 +26,7 @@ export function getInstalledForgeVersion(directory: string): string|null
 	const fileName = getInstalledForgeFileName(directory);
 	if (fileName == null) { return null; }
 
-	const match = fileName.match(/forge-(.+?)-universal\.jar/);
+	const match = fileName.match(/^forge-([0-9\.-]+)-installer\.jar$/);
 	return match != null ? match[1] : null;
 }
 
@@ -35,7 +35,7 @@ export function getInstalledForgeFileName(directory: string): string|null
 	const files = fs.readdirSync(directory);
 	for (const fileName of files)
 	{
-		const match = fileName.match(/forge-.+?-universal\.jar/);
+		const match = fileName.match(/^forge-[0-9\.-]+-installer\.jar$/);
 		if (match == null) { continue; }
 
 		return match[0];
@@ -174,4 +174,3 @@ export async function installLauncher(directory: string, log: (_: string) => voi
 		log("Wrote " + directory + "/start.sh");
 	}
 }
-

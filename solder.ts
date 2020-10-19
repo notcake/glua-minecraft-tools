@@ -258,7 +258,7 @@ export class Modpack
 		}
 		finally
 		{
-			fs.rmdirSync(tempDirectory);
+			fs.rmdirSync(tempDirectory, { recursive: true });
 		}
 		console.log("Updated to version " + this.version + ".");
 	}
