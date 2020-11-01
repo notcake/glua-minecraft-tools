@@ -165,7 +165,7 @@ export async function installLauncher(directory: string, log: (_: string) => voi
 		fs.writeFileSync(directory + "/start.sh",
 			"#!/bin/bash\n" +
 			"curdir=\"${0%/*}\"\n" +
-			"jar=\"${curdir}/`ls ${curdir} | grep universal.jar`\"\n" +
+			"jar=\"${curdir}/`ls ${curdir} | grep -P ^forge-[\d.]+-[\d.]+(?:-universal)?\.jar$`\"\n" +
 			"\n" +
 			"java " + javaArguments + " -jar \"${jar}\" " + minecraftArguments + "\n"
 		);
