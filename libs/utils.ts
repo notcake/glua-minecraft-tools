@@ -6,6 +6,7 @@ import * as child_process from "child-process-promise";
 
 export async function exec(command: string, argv: string[], options: { [_: string]: any } = {}): Promise<void>
 {
+	options = { maxBuffer: 1024 * 1024 * 20, ...options };
 	const p = child_process.execFile(command, argv, options);
 	p.childProcess.stdout.on("data", x => process.stdout.write(x));
 	p.childProcess.stderr.on("data", x => process.stderr.write(x));
