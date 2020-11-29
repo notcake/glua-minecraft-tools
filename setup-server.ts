@@ -218,7 +218,16 @@ async function main(argc: number, argv: string[])
 	}
 	set("max-tick-time", "300000");
 	set("allow-flight", "true");
-	set("level-type", "BIOMESOP");
+	// The level-type for Biomes O' Plenty should be "biomesoplenty" for 1.15 and above
+	// and "BIOMESOP" for 1.12.2 and below.
+	if (parseInt(minecraftVersion.split(".")[1]) >= 15)
+	{
+		set("level-type", "biomesoplenty");
+	}
+	else
+	{
+		set("level-type", "BIOMESOP");
+	}
 	set("max-players", "30");
 	set("white-list", "true");
 
