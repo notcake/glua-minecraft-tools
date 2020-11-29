@@ -69,8 +69,35 @@ export class CurseforgeModRepository implements IModRepository
 			const latestReleaseIds = new Map<string, string>();
 			for (const result of json)
 			{
+				// Determine whether this release is for Fabric or Forge
+				let isFabric = false;
+				let isForge = false;
 				for (const version of result.gameVersion)
 				{
+					isFabric = isFabric || version.toLowerCase() == "fabric";
+					isForge = isForge || version.toLowerCase() == "forge";
+				}
+
+				// Assume it is for Forge if there are no Fabric or Forge tags
+				if (!isForge && !isFabric)
+				{
+					isForge = true;
+				}
+
+				// Skip non-Forge releases
+				if (!isForge)
+				{
+					continue;
+				}
+
+				for (const version of result.gameVersion)
+				{
+					if (version.toLowerCase() == "fabric" ||
+					    version.toLowerCase() == "forge")
+					{
+						continue;
+					}
+
 					if (!latestDates.has(version) ||
 					    result.fileDate > latestDates.get(version)!)
 					{
