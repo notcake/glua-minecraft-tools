@@ -20,6 +20,13 @@ export class CurseforgeModRepository implements IModRepository
 
 	public constructor()
 	{
+		// api.cfwidget.com resolves these slugs incorrectly with old data.
+		// Fill the cache with the correct mod IDs.
+		// Note that this means slug renames will not be picked up for these mods.
+		this.slugIds.set("terraforged", "363820");
+		this.slugIds.set("light-overlay", "325492");
+		this.slugIds.set("mystical-adaptations", "325892");
+		this.slugIds.set("vanilla-tools", "308705");
 	}
 
 	// IModRepository
