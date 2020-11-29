@@ -105,29 +105,30 @@ export async function downloadMods(modTables: ITable[], minecraftVersion: string
 
 			enabledMods[packModId(modRepository.name, id)] = true;
 
-			// Get download URL
+			// Get release ID
 			const release = modTable.getModReleaseId(i, minecraftVersion);
 			if (release == null)
 			{
-				log(progress + " ! " + packModId(modRepository.name, id) + ": No download URL for Minecraft " + minecraftVersion + " found!");
+				log(progress + " ! " + packModId(modRepository.name, id) + ": No release for Minecraft " + minecraftVersion + " found!");
 				continue;
 			}
 
 			const [modRepositoryOverride, idOverride, releaseId] = release;
-			const downloadUrl = await modRepositoryOverride.getModReleaseDownloadUrl(idOverride, releaseId);
 
-			// Bail if no download URL found
-			if (downloadUrl == null)
-			{
-				log(progress + " ! " + packModId(modRepository.name, id) + ": Unable to download!");
-				continue;
-			}
-
-			// Download new version
 			const existingFileName = manifest.getModFileName(modRepository.name, id);
 			if (manifest.getModVersion(modRepository.name, id) != releaseId ||
 			    (existingFileName != null && !fs.existsSync(modDirectory + "/" + existingFileName)))
 			{
+				// Get download URL
+				const downloadUrl = await modRepositoryOverride.getModReleaseDownloadUrl(idOverride, releaseId);
+
+				// Bail if no download URL found
+				if (downloadUrl == null)
+				{
+					log(progress + " ! " + packModId(modRepository.name, id) + ": Unable to download!");
+					continue;
+				}
+
 				// Remove existing jar
 				if (existingFileName != null)
 				{
