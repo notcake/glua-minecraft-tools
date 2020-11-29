@@ -136,6 +136,7 @@ export class CurseforgeModRepository implements IModRepository
 		return this.minecraftGameId;
 	}
 
+	/** Returns the ID of the mod with the given slug */
 	public async getSlugId(slug: string): Promise<string|null>
 	{
 		slug = this.translateSlug(slug);
